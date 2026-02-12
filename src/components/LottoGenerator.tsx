@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sparkles, RefreshCw } from 'lucide-react';
-import { generateLottoNumbers } from '../utils/lottoGenerator';
+import { generateLottoNumbers, getCurrentLottoRound } from '../utils/lottoGenerator';
 import { LottoNumberBall } from './LottoNumberBall';
 
 interface LottoGeneratorProps {
@@ -10,6 +10,11 @@ interface LottoGeneratorProps {
 export function LottoGenerator({ onGenerate }: LottoGeneratorProps) {
   const [currentNumbers, setCurrentNumbers] = useState<number[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [currentRound, setCurrentRound] = useState(0);
+
+  useEffect(() => {
+    setCurrentRound(getCurrentLottoRound());
+  }, []);
 
   const handleGenerate = () => {
     setIsGenerating(true);
@@ -34,6 +39,11 @@ export function LottoGenerator({ onGenerate }: LottoGeneratorProps) {
               번호 생성기
             </h2>
             <Sparkles className="w-5 h-5 sm:w-8 sm:h-8 text-purple-500" />
+          </div>
+          <div className="flex items-center justify-center gap-2">
+            <span className="px-3 py-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-sm sm:text-base font-bold rounded-full shadow-md">
+              제 {currentRound}회
+            </span>
           </div>
           <p className="text-gray-500 text-xs sm:text-base">행운의 번호를 만들어보세요</p>
         </div>

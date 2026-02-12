@@ -3,6 +3,7 @@ export interface LottoNumber {
   numbers: number[];
   timestamp: number;
   date: string;
+  round: number; // 로또 회차
 }
 
 export interface LottoHistory {

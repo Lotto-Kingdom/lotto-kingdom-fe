@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { LottoNumber } from '../types';
+import { getCurrentLottoRound } from '../utils/lottoGenerator';
 
 const STORAGE_KEY = 'lotto_history';
 
@@ -26,6 +27,7 @@ export function useLottoHistory() {
       numbers,
       timestamp: Date.now(),
       date: new Date().toISOString(),
+      round: getCurrentLottoRound(), // 현재 회차 자동 계산
     };
 
     const newHistory = [newEntry, ...history];
