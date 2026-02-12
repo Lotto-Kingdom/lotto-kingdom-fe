@@ -29,7 +29,7 @@ export function HistoryItem({ entry, onDelete }: HistoryItemProps) {
       {/* 타임스탬프 및 회차 */}
       <div className="flex items-center justify-between mb-2.5 sm:mb-3">
         <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs font-bold rounded-full">
+          <span className="px-2 py-0.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs font-bold rounded-full whitespace-nowrap">
             {entry.round}회
           </span>
           <span className="text-xs sm:text-sm text-gray-500 font-medium">
