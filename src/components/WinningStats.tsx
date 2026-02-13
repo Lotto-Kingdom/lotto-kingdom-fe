@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { BarChart3, Flame, Snowflake, TrendingUp, Hash, Shuffle, Star } from 'lucide-react';
 import { getLottoNumberColor } from '../utils/lottoGenerator';
 
@@ -53,83 +53,7 @@ function Ball({ num, size = 'md', bonus = false, dim = false }: {
 }
 
 // ─────────────────────────────────────────────
-// ① 번호 출현 빈도 히트맵 (1~45 전체)
-// ─────────────────────────────────────────────
-function FrequencyHeatmap({ freq, maxFreq }: { freq: Record<number, number>; maxFreq: number }) {
-  const [highlight, setHighlight] = useState<number | null>(null);
-
-  return (
-    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-4 sm:p-6">
-      <div className="flex items-center gap-2 mb-1">
-        <Hash className="w-5 h-5 text-blue-500" />
-        <h3 className="font-black text-gray-800 text-base sm:text-lg">번호별 출현 빈도</h3>
-      </div>
-      <p className="text-xs text-gray-400 mb-4">번호를 클릭하면 강조됩니다</p>
-
-      <div className="grid grid-cols-9 gap-1.5">
-        {Array.from({ length: 45 }, (_, i) => i + 1).map((n) => {
-          const count = freq[n] ?? 0;
-          const intensity = maxFreq > 0 ? count / maxFreq : 0;
-          const isHot = count === maxFreq;
-          const isCold = count === Math.min(...Object.values(freq));
-          const isHighlighted = highlight === n;
-          const isDimmed = highlight !== null && highlight !== n;
-
-          return (
-            <button
-              key={n}
-              onClick={() => setHighlight(highlight === n ? null : n)}
-              title={`${n}번: ${count}회 출현`}
-              className={`relative aspect-square rounded-xl flex flex-col items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 ${
-                isHighlighted
-                  ? 'ring-2 ring-blue-400 ring-offset-1 scale-110'
-                  : isDimmed
-                  ? 'opacity-30'
-                  : ''
-              }`}
-              style={{
-                backgroundColor: isHighlighted
-                  ? '#3b82f6'
-                  : `rgba(99,102,241,${0.08 + intensity * 0.7})`,
-              }}
-            >
-              <span className={`text-xs font-black leading-none ${isHighlighted ? 'text-white' : intensity > 0.6 ? 'text-white' : 'text-gray-700'}`}>
-                {n}
-              </span>
-              <span className={`text-[8px] font-bold leading-none mt-0.5 ${isHighlighted ? 'text-white/80' : intensity > 0.6 ? 'text-white/70' : 'text-gray-400'}`}>
-                {count}
-              </span>
-              {isHot && !isDimmed && (
-                <span className="absolute -top-1 -right-1 text-[8px]">🔥</span>
-              )}
-              {isCold && count < maxFreq && !isDimmed && (
-                <span className="absolute -top-1 -right-1 text-[8px]">❄️</span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* 범례 */}
-      <div className="flex items-center gap-2 mt-4 pt-3 border-t border-gray-100">
-        <span className="text-xs text-gray-400">낮음</span>
-        <div className="flex gap-0.5 flex-1">
-          {[0.1, 0.25, 0.4, 0.55, 0.7, 0.85, 1.0].map((v) => (
-            <div
-              key={v}
-              className="h-3 flex-1 rounded-sm"
-              style={{ backgroundColor: `rgba(99,102,241,${0.08 + v * 0.7})` }}
-            />
-          ))}
-        </div>
-        <span className="text-xs text-gray-400">높음</span>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────
-// ② HOT / COLD 번호
+// ① HOT / COLD 번호
 // ─────────────────────────────────────────────
 function HotCold({ freq }: { freq: Record<number, number> }) {
   const sorted = Object.entries(freq)
@@ -561,8 +485,6 @@ export function WinningStats() {
     return f;
   }, [draws]);
 
-  const maxFreq = useMemo(() => Math.max(...Object.values(freq)), [freq]);
-
   const topNum = Object.entries(freq).sort((a, b) => Number(b[1]) - Number(a[1]))[0];
   const coldNum = Object.entries(freq).sort((a, b) => Number(a[1]) - Number(b[1]))[0];
   const totalNums = Object.values(freq).reduce((a, b) => a + b, 0);
@@ -608,9 +530,6 @@ export function WinningStats() {
           </div>
         </div>
       </div>
-
-      {/* 번호별 출현 빈도 히트맵 */}
-      <FrequencyHeatmap freq={freq} maxFreq={maxFreq} />
 
       {/* HOT / COLD */}
       <HotCold freq={freq} />
