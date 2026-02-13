@@ -25,6 +25,10 @@
 }
 
 @layer utilities {
+  /* 스크롤바 숨김 */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
   /* 커스텀 스크롤바 */
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
