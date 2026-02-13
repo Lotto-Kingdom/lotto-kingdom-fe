@@ -6,6 +6,7 @@ import { StatisticsPanel } from './components/StatisticsPanel';
 import { MobileStatistics } from './components/MobileStatistics';
 import { WinningHistory } from './components/WinningHistory';
 import { WinningRegion } from './components/WinningRegion';
+import { WinningAmount } from './components/WinningAmount';
 import { useLottoHistory } from './hooks/useLottoHistory';
 
 function HomePage() {
@@ -42,6 +43,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/winning" element={<WinningHistory />} />
           <Route path="/region" element={<WinningRegion />} />
+          <Route path="/amount" element={<WinningAmount />} />
         </Routes>
       </main>
 

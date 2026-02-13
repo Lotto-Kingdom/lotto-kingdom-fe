@@ -10,7 +10,7 @@ export function Header() {
   const menuItems = [
     { icon: TrendingUp, label: '역대 당첨', path: '/winning' },
     { icon: MapPin,     label: '당첨 지역', path: '/region' },
-    { icon: DollarSign, label: '당첨 금액', path: null },
+    { icon: DollarSign, label: '당첨 금액', path: '/amount' },
     { icon: BarChart3,  label: '통계',      path: null },
   ];
 
