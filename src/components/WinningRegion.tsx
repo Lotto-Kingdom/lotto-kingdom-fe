@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import {
   MapPin, Trophy, Store, ChevronLeft, ChevronRight, ChevronDown,
-  X, Star, Award, TrendingUp, Zap, Hash, Crown,
+  X, Star, Award, TrendingUp, Zap, Hash, Crown, Copy, Check,
 } from 'lucide-react';
 import {
   MOCK_STORES,
@@ -178,7 +178,27 @@ function StoreDetailModal({
   store: WinningStore;
   onClose: () => void;
 }) {
+  const [copied, setCopied] = useState(false);
   const c = regionColor(store.region);
+
+  const handleCopyAddress = async () => {
+    try {
+      await navigator.clipboard.writeText(store.address);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // fallback for older browsers
+      const el = document.createElement('textarea');
+      el.value = store.address;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${
     store.lng - 0.005
   }%2C${store.lat - 0.003}%2C${store.lng + 0.005}%2C${store.lat + 0.003}&layer=mapnik&marker=${store.lat}%2C${store.lng}`;
@@ -202,7 +222,24 @@ function StoreDetailModal({
               </div>
               <div>
                 <h3 className="font-black text-gray-900 text-lg leading-tight">{store.name}</h3>
-                <p className="text-sm text-gray-500 mt-0.5">{store.address}</p>
+                <button
+                  onClick={handleCopyAddress}
+                  className="flex items-center gap-1.5 mt-0.5 group text-left"
+                >
+                  <p className="text-sm text-gray-500 group-hover:text-gray-700 transition-colors">
+                    {store.address}
+                  </p>
+                  <span className={`flex-shrink-0 flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md transition-all ${
+                    copied
+                      ? 'bg-emerald-100 text-emerald-600'
+                      : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200 group-hover:text-gray-600'
+                  }`}>
+                    {copied
+                      ? <><Check className="w-3 h-3" />복사됨</>
+                      : <><Copy className="w-3 h-3" />복사</>
+                    }
+                  </span>
+                </button>
                 <div className="mt-1.5">
                   <RegionBadge region={store.region} />
                 </div>
