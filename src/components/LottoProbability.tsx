@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Percent, Zap, ChevronUp } from 'lucide-react';
 import { LottoNumber } from '../types';
-import { getLottoNumberColor } from '../utils/lottoGenerator';
+
 
 // ── 로또 이론 확률 상수 ──────────────────────────────────
 const RANK_PROB: Record<number, number> = {
@@ -61,18 +61,6 @@ export function LottoProbability({ history }: Props) {
     return counts;
   }, [history]);
 
-  // 회차별 그룹핑
-  const roundGroups = useMemo(() => {
-    const map = new Map<number, LottoNumber[]>();
-    for (const e of history) {
-      const arr = map.get(e.round) ?? [];
-      arr.push(e);
-      map.set(e.round, arr);
-    }
-    return Array.from(map.entries())
-      .sort((a, b) => b[0] - a[0]) // 최신 회차 먼저
-      .slice(0, 10);               // 최근 10회차
-  }, [history]);
 
   if (totalSets === 0) return null;
 
@@ -150,72 +138,6 @@ export function LottoProbability({ history }: Props) {
           <p className="text-xs text-green-500 mt-1">{totalSets}세트 생성 시 3개 이상 일치할 누적 확률</p>
         </div>
 
-        {/* 회차별 현황 */}
-        {roundGroups.length > 0 && (
-          <div>
-            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">회차별 생성 현황 (최근 10회차)</p>
-            <div className="space-y-2">
-              {roundGroups.map(([round, entries]) => {
-                const bestRank = entries
-                  .filter(e => e.winningInfo)
-                  .map(e => e.winningInfo!.rank)
-                  .sort((a, b) => a - b)[0];
-
-                return (
-                  <div key={round} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
-                    {/* 회차 배지 */}
-                    <span className="flex-shrink-0 text-xs font-bold text-gray-500 w-14 text-right">
-                      {round}회
-                    </span>
-
-                    {/* 세트 수 */}
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      {entries.map((e) => {
-                        const rank = e.winningInfo?.rank;
-                        const c = rank ? RANK_COLORS[rank - 1] : null;
-                        return (
-                          <div
-                            key={e.id}
-                            className={`w-2 h-6 rounded-sm ${c ? c.bar : 'bg-gray-200'}`}
-                            title={rank ? `${RANK_LABEL[rank-1]} 당첨` : `${e.numbers.join(', ')}`}
-                          />
-                        );
-                      })}
-                    </div>
-
-                    {/* 번호 미리보기 (첫 세트) */}
-                    <div className="flex gap-1 flex-wrap flex-1">
-                      {entries[0].numbers.map(n => (
-                        <span
-                          key={n}
-                          className={`w-5 h-5 rounded-full ${getLottoNumberColor(n)} text-white text-[10px] font-bold flex items-center justify-center`}
-                        >
-                          {n}
-                        </span>
-                      ))}
-                      {entries.length > 1 && (
-                        <span className="text-xs text-gray-400 self-center">+{entries.length - 1}</span>
-                      )}
-                    </div>
-
-                    {/* 이 회차 1등 확률 */}
-                    <div className="flex-shrink-0 text-right">
-                      <p className="text-xs text-gray-400">{entries.length}세트</p>
-                      <p className="text-xs font-bold text-indigo-500">{fmtOdds(entries.length, RANK_PROB[1])}</p>
-                    </div>
-
-                    {/* 당첨 뱃지 */}
-                    {bestRank && (
-                      <span className={`flex-shrink-0 text-xs font-bold px-2 py-0.5 rounded-full border ${RANK_COLORS[bestRank-1].bg} ${RANK_COLORS[bestRank-1].border} ${RANK_COLORS[bestRank-1].text}`}>
-                        {RANK_LABEL[bestRank-1]}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
       </div>
     </div>
