@@ -10,7 +10,7 @@ interface LottoHistoryProps {
   onUpdate: (id: string, updates: Partial<LottoNumber>) => void;
 }
 
-export function LottoHistory({ history, onDelete, onClearAll, onUpdate }: LottoHistoryProps) {
+export function LottoHistory({ history, onDelete, onClearAll, onUpdate: _onUpdate }: LottoHistoryProps) {
   const [activeTab, setActiveTab] = useState<'history' | 'winning'>('history');
   const [selectedRound, setSelectedRound] = useState<number | 'all'>('all');
   const [inputRound, setInputRound] = useState('');
