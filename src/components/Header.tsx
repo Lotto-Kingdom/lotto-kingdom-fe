@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, TrendingUp, MapPin, DollarSign, BarChart3 } from 'lucide-react';
+import { Menu, X, TrendingUp, MapPin, DollarSign, BarChart3, User } from 'lucide-react';
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -12,6 +12,7 @@ export function Header() {
     { icon: MapPin,     label: '당첨 지역', path: '/region' },
     { icon: DollarSign, label: '당첨 금액', path: '/amount' },
     { icon: BarChart3,  label: '통계',      path: '/stats' },
+    { icon: User,       label: '내 번호',   path: '/my-stats' },
   ];
 
   const handleMenuClick = (path: string | null) => {

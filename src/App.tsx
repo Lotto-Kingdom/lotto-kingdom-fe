@@ -8,6 +8,7 @@ import { WinningHistory } from './components/WinningHistory';
 import { WinningRegion } from './components/WinningRegion';
 import { WinningAmount } from './components/WinningAmount';
 import { WinningStats } from './components/WinningStats';
+import { MyAnalysis } from './components/MyAnalysis';
 import { useLottoHistory } from './hooks/useLottoHistory';
 
 function HomePage() {
@@ -46,6 +47,7 @@ function App() {
           <Route path="/region" element={<WinningRegion />} />
           <Route path="/amount" element={<WinningAmount />} />
           <Route path="/stats" element={<WinningStats />} />
+          <Route path="/my-stats" element={<MyAnalysis />} />
         </Routes>
       </main>
 
