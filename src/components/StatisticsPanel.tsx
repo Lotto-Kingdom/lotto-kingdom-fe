@@ -1,6 +1,5 @@
 import { TrendingUp, Hash, Clock, Award } from 'lucide-react';
 import { LottoNumber } from '../types';
-import { LottoProbability } from './LottoProbability';
 
 interface StatisticsPanelProps {
   history: LottoNumber[];
@@ -115,9 +114,6 @@ export function StatisticsPanel({ history }: StatisticsPanelProps) {
           </div>
         </div>
       )}
-
-      {/* 당첨 확률 */}
-      <LottoProbability history={history} />
 
       {/* 행운의 메시지 */}
       <div className="bg-gradient-to-br from-yellow-50 via-orange-50 to-red-50 rounded-2xl shadow-lg p-5">

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { ChevronDown, ChevronUp, TrendingUp, Hash, Clock, Award } from 'lucide-react';
 import { LottoNumber } from '../types';
 import { getLottoNumberColor } from '../utils/lottoGenerator';
-import { LottoProbability } from './LottoProbability';
 
 interface MobileStatisticsProps {
   history: LottoNumber[];
@@ -109,9 +108,6 @@ export function MobileStatistics({ history }: MobileStatisticsProps) {
               </div>
               <span className="text-sm font-bold text-orange-600">{getLastGeneratedTime()}</span>
             </div>
-
-            {/* 당첨 확률 */}
-            <LottoProbability history={history} />
 
             {/* 자주 나온 번호 TOP 3 */}
             {frequentNumbers.length > 0 && (
