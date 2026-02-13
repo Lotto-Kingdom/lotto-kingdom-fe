@@ -7,9 +7,11 @@ interface LottoHistoryProps {
   history: LottoNumber[];
   onDelete: (id: string) => void;
   onClearAll: () => void;
+  onUpdate: (id: string, updates: Partial<LottoNumber>) => void;
 }
 
-export function LottoHistory({ history, onDelete, onClearAll }: LottoHistoryProps) {
+export function LottoHistory({ history, onDelete, onClearAll, onUpdate }: LottoHistoryProps) {
+  const [activeTab, setActiveTab] = useState<'history' | 'winning'>('history');
   const [selectedRound, setSelectedRound] = useState<number | 'all'>('all');
   const [inputRound, setInputRound] = useState('');
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
@@ -24,13 +26,20 @@ export function LottoHistory({ history, onDelete, onClearAll }: LottoHistoryProp
     };
   }, [history]);
 
+  // 당첨 내역 필터링
+  const winningHistory = useMemo(() => {
+    return history.filter(item => item.winningInfo);
+  }, [history]);
+
   // 필터링된 히스토리
   const filteredHistory = useMemo(() => {
+    let items = activeTab === 'winning' ? winningHistory : history;
+
     if (selectedRound === 'all') {
-      return history;
+      return items;
     }
-    return history.filter(item => item.round === selectedRound);
-  }, [history, selectedRound]);
+    return items.filter(item => item.round === selectedRound);
+  }, [history, winningHistory, selectedRound, activeTab]);
 
   // 회차 조회 핸들러
   const handleSearch = () => {
@@ -83,27 +92,58 @@ export function LottoHistory({ history, onDelete, onClearAll }: LottoHistoryProp
   return (
     <div className="w-full">
       <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl shadow-lg p-4 sm:p-6">
-        {/* 헤더 */}
-        <div className="flex items-center justify-between mb-4 sm:mb-6">
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <History className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
-            <h2 className="text-base sm:text-2xl font-bold text-gray-800">
-              생성 기록
-            </h2>
-            <span className="px-2 py-0.5 sm:py-1 bg-blue-100 text-blue-700 rounded-full text-xs sm:text-sm font-semibold">
-              {filteredHistory.length}
-            </span>
+        {/* 탭 헤더 */}
+        <div className="mb-4 sm:mb-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            {/* 탭 버튼 */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setActiveTab('history')}
+                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all ${
+                  activeTab === 'history'
+                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md'
+                    : 'bg-white text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <History className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span>생성 기록</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-xs font-semibold ${
+                  activeTab === 'history' ? 'bg-white/20' : 'bg-gray-100'
+                }`}>
+                  {history.length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('winning')}
+                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all ${
+                  activeTab === 'winning'
+                    ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-md'
+                    : 'bg-white text-gray-600 hover:bg-gray-50'
+                }`}
+              >
+                <span className="text-base sm:text-lg">🏆</span>
+                <span>당첨 내역</span>
+                <span className={`px-1.5 py-0.5 rounded-full text-xs font-semibold ${
+                  activeTab === 'winning' ? 'bg-white/20' : 'bg-gray-100'
+                }`}>
+                  {winningHistory.length}
+                </span>
+              </button>
+            </div>
+
+            {/* 전체 삭제 버튼 (생성 기록 탭에서만) */}
+            {activeTab === 'history' && history.length > 0 && (
+              <button
+                onClick={handleClearAll}
+                className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white rounded-xl text-xs sm:text-sm font-semibold transition-colors touch-manipulation"
+              >
+                <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">전체 삭제</span>
+                <span className="sm:hidden">삭제</span>
+              </button>
+            )}
           </div>
-          {history.length > 0 && (
-            <button
-              onClick={handleClearAll}
-              className="flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white rounded-xl text-xs sm:text-sm font-semibold transition-colors touch-manipulation"
-            >
-              <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">전체 삭제</span>
-              <span className="sm:hidden">삭제</span>
-            </button>
-          )}
         </div>
 
         {/* 회차 필터 */}
@@ -189,9 +229,25 @@ export function LottoHistory({ history, onDelete, onClearAll }: LottoHistoryProp
 
         {/* 히스토리 리스트 */}
         <div className="space-y-2.5 sm:space-y-4 max-h-[55vh] sm:max-h-[60vh] overflow-y-auto pr-1 sm:pr-2 custom-scrollbar">
-          {filteredHistory.length === 0 ? (
+          {activeTab === 'winning' && winningHistory.length === 0 ? (
+            <div className="text-center py-12 sm:py-16">
+              <div className="text-6xl sm:text-8xl mb-4">🎰</div>
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-400 mb-2">당첨 내역이 없습니다</h3>
+              <p className="text-gray-400 text-xs sm:text-sm mb-4">
+                생성한 번호의 당첨 여부를 확인해보세요
+              </p>
+              <button
+                onClick={() => setActiveTab('history')}
+                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl text-sm font-semibold hover:shadow-lg transition-all"
+              >
+                생성 기록으로 이동
+              </button>
+            </div>
+          ) : filteredHistory.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
-              <p className="text-sm sm:text-base">선택한 회차의 생성 기록이 없습니다.</p>
+              <p className="text-sm sm:text-base">
+                {activeTab === 'winning' ? '선택한 회차의 당첨 내역이 없습니다.' : '선택한 회차의 생성 기록이 없습니다.'}
+              </p>
             </div>
           ) : (
             filteredHistory.map((entry) => (

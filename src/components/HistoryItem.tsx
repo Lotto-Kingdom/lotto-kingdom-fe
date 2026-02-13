@@ -24,14 +24,31 @@ export function HistoryItem({ entry, onDelete }: HistoryItemProps) {
     }
   };
 
+  const getRankEmoji = (rank: number) => {
+    const emojis = ['🥇', '🥈', '🥉', '🎊', '🎉'];
+    return emojis[rank - 1] || '🎰';
+  };
+
+  const getRankText = (rank: number) => {
+    return `${rank}등`;
+  };
+
   return (
-    <div className="bg-white rounded-2xl p-3.5 sm:p-5 shadow-md hover:shadow-lg transition-shadow animate-slide-up">
+    <div className={`bg-white rounded-2xl p-3.5 sm:p-5 shadow-md hover:shadow-lg transition-shadow animate-slide-up ${
+      entry.winningInfo ? 'border-4 border-yellow-400' : ''
+    }`}>
       {/* 타임스탬프 및 회차 */}
       <div className="flex items-center justify-between mb-2.5 sm:mb-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="px-2 py-0.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs font-bold rounded-full whitespace-nowrap">
             {entry.round}회
           </span>
+          {entry.winningInfo && (
+            <span className="px-2 py-0.5 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs font-bold rounded-full whitespace-nowrap flex items-center gap-1">
+              <span>{getRankEmoji(entry.winningInfo.rank)}</span>
+              <span>{getRankText(entry.winningInfo.rank)} 당첨</span>
+            </span>
+          )}
           <span className="text-xs sm:text-sm text-gray-500 font-medium">
             {formatDate(entry.timestamp)}
           </span>
@@ -62,22 +79,48 @@ export function HistoryItem({ entry, onDelete }: HistoryItemProps) {
 
       {/* 번호 표시 */}
       <div className="flex flex-wrap gap-1.5 sm:gap-3">
-        {entry.numbers.map((num) => (
-          <div
-            key={num}
-            className={`
-              w-9 h-9 sm:w-12 sm:h-12 rounded-full
-              ${getLottoNumberColor(num)}
-              text-white font-bold text-sm sm:text-base
-              flex items-center justify-center
-              shadow-md
-              select-none
-            `}
-          >
-            {num}
-          </div>
-        ))}
+        {entry.numbers.map((num) => {
+          const isMatched = entry.winningInfo?.matchedNumbers.includes(num);
+          return (
+            <div
+              key={num}
+              className={`
+                w-9 h-9 sm:w-12 sm:h-12 rounded-full
+                ${getLottoNumberColor(num)}
+                text-white font-bold text-sm sm:text-base
+                flex items-center justify-center
+                shadow-md
+                select-none
+                relative
+                ${isMatched ? 'ring-4 ring-yellow-400 scale-110' : ''}
+              `}
+            >
+              {num}
+              {isMatched && (
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center text-xs">
+                  ✓
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
+
+      {/* 당첨 정보 추가 표시 */}
+      {entry.winningInfo && (
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <div className="flex items-center justify-between text-xs sm:text-sm">
+            <span className="text-gray-600">
+              <span className="font-semibold text-orange-600">{entry.winningInfo.matchCount}개</span> 일치
+            </span>
+            {entry.winningInfo.prize && (
+              <span className="font-bold text-orange-600">
+                {entry.winningInfo.prize.toLocaleString()}원
+              </span>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

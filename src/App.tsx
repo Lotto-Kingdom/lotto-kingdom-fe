@@ -6,7 +6,7 @@ import { MobileStatistics } from './components/MobileStatistics';
 import { useLottoHistory } from './hooks/useLottoHistory';
 
 function App() {
-  const { history, addEntry, deleteEntry, clearHistory } = useLottoHistory();
+  const { history, addEntry, deleteEntry, clearHistory, updateEntry } = useLottoHistory();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex flex-col">
@@ -29,6 +29,7 @@ function App() {
               history={history}
               onDelete={deleteEntry}
               onClearAll={clearHistory}
+              onUpdate={updateEntry}
             />
           </div>
 

@@ -48,10 +48,20 @@ export function useLottoHistory() {
     localStorage.removeItem(STORAGE_KEY);
   };
 
+  // 항목 업데이트 (당첨 정보 추가 등)
+  const updateEntry = (id: string, updates: Partial<LottoNumber>) => {
+    const newHistory = history.map((entry) =>
+      entry.id === id ? { ...entry, ...updates } : entry
+    );
+    setHistory(newHistory);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newHistory));
+  };
+
   return {
     history,
     addEntry,
     deleteEntry,
     clearHistory,
+    updateEntry,
   };
 }
