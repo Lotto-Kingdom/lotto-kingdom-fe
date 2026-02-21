@@ -12,6 +12,7 @@ import { WinningAmount } from './components/WinningAmount';
 import { WinningStats } from './components/WinningStats';
 import { MyAnalysis } from './components/MyAnalysis';
 import { ContactUs } from './components/ContactUs';
+import { TermsOfService } from './components/TermsOfService';
 import { useLottoHistory } from './hooks/useLottoHistory';
 import { useState } from 'react';
 
@@ -58,6 +59,7 @@ function App() {
           <Route path="/stats" element={<WinningStats />} />
           <Route path="/my-stats" element={<MyAnalysis />} />
           <Route path="/contact" element={<ContactUs />} />
+          <Route path="/terms" element={<TermsOfService />} />
         </Routes>
       </main>
 
@@ -80,9 +82,9 @@ function App() {
               </p>
             </div>
             <div className="flex items-center justify-center gap-4 text-xs text-gray-400">
-              <button onClick={() => alert('준비중인 페이지입니다')} className="hover:text-gray-600 transition-colors">
+              <Link to="/terms" className="hover:text-gray-600 transition-colors">
                 이용약관
-              </button>
+              </Link>
               <span>•</span>
               <button onClick={() => alert('준비중인 페이지입니다')} className="hover:text-gray-600 transition-colors">
                 개인정보처리방침
