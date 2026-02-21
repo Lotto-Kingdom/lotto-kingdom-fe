@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useLottoHistory } from '../hooks/useLottoHistory';
 import { getLottoNumberColor } from '../utils/lottoGenerator';
-import { Sparkles, TrendingUp, BarChart2, Trophy, AlertCircle, RefreshCw } from 'lucide-react';
+import { Sparkles, TrendingUp, BarChart2, Trophy, AlertCircle, RefreshCw, History } from 'lucide-react';
+import { LottoHistory } from './LottoHistory';
 
 // ── 번호 공 ──────────────────────────────────────────────
 function Ball({ n, size = 'md', dim = false }: { n: number; size?: 'sm' | 'md' | 'lg'; dim?: boolean }) {
@@ -65,7 +66,7 @@ function generateRecommended(freq: [number, number][], count = 6): number[] {
 
 // ── 메인 컴포넌트 ────────────────────────────────────────
 export function MyAnalysis() {
-  const { history } = useLottoHistory();
+  const { history, deleteEntry, clearHistory, updateEntry } = useLottoHistory();
   const [recommends, setRecommends] = useState<number[][]>([]);
   const [recGenerated, setRecGenerated] = useState(false);
 
@@ -358,6 +359,26 @@ export function MyAnalysis() {
           )}
         </div>
       </Section>
+
+      {/* ── 전체 번호 생성/당첨 내역 ──────────────────────── */}
+      <div className="mt-10 sm:mt-12 bg-white rounded-3xl shadow-lg border border-gray-100 p-4 sm:p-6 lg:p-8">
+        <h3 className="text-lg sm:text-2xl font-black text-gray-800 flex items-center gap-2 mb-6">
+          <History className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" />
+          전체 생성/당첨 내역
+          <span className="text-xs sm:text-sm font-medium text-gray-400 bg-gray-100 px-3 py-1 rounded-full ml-auto">
+            총 {history.length}건
+          </span>
+        </h3>
+        {/* LottoHistory 내부 여백 등을 자연스럽게 보이도록 */}
+        <div className="-mx-4 sm:-mx-6 lg:-mx-8">
+          <LottoHistory
+            history={history}
+            onDelete={deleteEntry}
+            onClearAll={clearHistory}
+            onUpdate={updateEntry}
+          />
+        </div>
+      </div>
 
     </div>
   );

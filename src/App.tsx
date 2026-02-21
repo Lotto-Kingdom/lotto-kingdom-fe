@@ -1,7 +1,9 @@
 import { Routes, Route } from 'react-router-dom';
 import { Header } from './components/Header';
 import { LottoGenerator } from './components/LottoGenerator';
-import { LottoHistory } from './components/LottoHistory';
+import { MiniHistory } from './components/MiniHistory';
+import { StoreFinder } from './components/StoreFinder';
+import { NearbyStore } from './components/NearbyStore';
 import { StatisticsPanel } from './components/StatisticsPanel';
 import { MobileStatistics } from './components/MobileStatistics';
 import { WinningHistory } from './components/WinningHistory';
@@ -10,21 +12,26 @@ import { WinningAmount } from './components/WinningAmount';
 import { WinningStats } from './components/WinningStats';
 import { MyAnalysis } from './components/MyAnalysis';
 import { useLottoHistory } from './hooks/useLottoHistory';
+import { useState } from 'react';
 
 function HomePage() {
-  const { history, addEntry, deleteEntry, clearHistory, updateEntry } = useLottoHistory();
+  const { history, addEntry } = useLottoHistory();
+  const [sessionCount, setSessionCount] = useState(0);
+
+  const handleGenerate = (nums: number[]) => {
+    addEntry(nums);
+    setSessionCount(prev => prev + 1);
+  };
+
+  const recentHistory = history.slice(0, Math.min(sessionCount, 5));
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
       <div className="lg:col-span-8 space-y-4 sm:space-y-6 lg:space-y-8">
-        <LottoGenerator onGenerate={addEntry} />
+        <LottoGenerator onGenerate={handleGenerate} />
+        {recentHistory.length > 0 && <MiniHistory history={recentHistory} />}
+        <StoreFinder />
         <MobileStatistics history={history} />
-        <LottoHistory
-          history={history}
-          onDelete={deleteEntry}
-          onClearAll={clearHistory}
-          onUpdate={updateEntry}
-        />
       </div>
       <aside className="hidden lg:block lg:col-span-4">
         <div className="sticky top-24">
@@ -43,6 +50,7 @@ function App() {
       <main className="flex-grow container mx-auto px-4 py-4 sm:py-8 pb-8 sm:pb-12 max-w-7xl">
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/store/nearby" element={<NearbyStore />} />
           <Route path="/winning" element={<WinningHistory />} />
           <Route path="/region" element={<WinningRegion />} />
           <Route path="/amount" element={<WinningAmount />} />

@@ -1,128 +1,122 @@
-import { TrendingUp, Hash, Clock, Award } from 'lucide-react';
+import { Trophy, Flame, Snowflake, Star } from 'lucide-react';
 import { LottoNumber } from '../types';
+import { RECENT_DRAWS, ALL_TIME_HOT, LONG_TERM_COLD } from '../utils/lottoData';
+import { getLottoNumberColor } from '../utils/lottoGenerator';
 
 interface StatisticsPanelProps {
-  history: LottoNumber[];
+  history?: LottoNumber[];
 }
 
-export function StatisticsPanel({ history }: StatisticsPanelProps) {
-  // 가장 많이 나온 번호 계산
-  const getMostFrequentNumbers = () => {
-    const frequency: { [key: number]: number } = {};
-
-    history.forEach((entry) => {
-      entry.numbers.forEach((num) => {
-        frequency[num] = (frequency[num] || 0) + 1;
-      });
-    });
-
-    return Object.entries(frequency)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 5)
-      .map(([num, count]) => ({ num: parseInt(num), count }));
-  };
-
-  // 최근 생성 시간
-  const getLastGeneratedTime = () => {
-    if (history.length === 0) return '-';
-    const lastEntry = history[0];
-    const now = Date.now();
-    const diff = now - lastEntry.timestamp;
-
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (days > 0) return `${days}일 전`;
-    if (hours > 0) return `${hours}시간 전`;
-    if (minutes > 0) return `${minutes}분 전`;
-    return '방금 전';
-  };
-
-  const frequentNumbers = getMostFrequentNumbers();
-  const totalNumbers = history.length * 6;
+export function StatisticsPanel({ }: StatisticsPanelProps) {
+  // 1. 직전 회차 당첨 번호
+  const latestDraw = RECENT_DRAWS[0];
 
   return (
     <div className="space-y-4">
-      {/* 통계 카드 */}
-      <div className="bg-white rounded-2xl shadow-lg p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <TrendingUp className="w-5 h-5 text-blue-600" />
-          <h3 className="text-lg font-bold text-gray-800">실시간 통계</h3>
-        </div>
 
-        <div className="space-y-4">
-          {/* 총 생성 횟수 */}
-          <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl">
+      {/* 1. 직전 회차 당첨 번호 */}
+      <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg p-5 text-white relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Hash className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-medium text-gray-700">총 생성 횟수</span>
+              <Trophy className="w-5 h-5 text-yellow-300" />
+              <h3 className="font-bold text-sm">직전 당첨 번호</h3>
             </div>
-            <span className="text-lg font-bold text-blue-600">{history.length}회</span>
+            <span className="text-xs bg-white/20 px-2 py-0.5 rounded-md font-bold">
+              제 {latestDraw.drwNo}회
+            </span>
           </div>
 
-          {/* 생성된 번호 수 */}
-          <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl">
-            <div className="flex items-center gap-2">
-              <Award className="w-4 h-4 text-purple-600" />
-              <span className="text-sm font-medium text-gray-700">생성된 번호</span>
-            </div>
-            <span className="text-lg font-bold text-purple-600">{totalNumbers}개</span>
-          </div>
-
-          {/* 마지막 생성 */}
-          <div className="flex items-center justify-between p-3 bg-gradient-to-r from-orange-50 to-orange-100 rounded-xl">
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-orange-600" />
-              <span className="text-sm font-medium text-gray-700">마지막 생성</span>
-            </div>
-            <span className="text-lg font-bold text-orange-600">{getLastGeneratedTime()}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* 자주 나온 번호 */}
-      {frequentNumbers.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-lg p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <Award className="w-5 h-5 text-purple-600" />
-            <h3 className="text-lg font-bold text-gray-800">자주 나온 번호</h3>
-          </div>
-
-          <div className="space-y-2">
-            {frequentNumbers.map(({ num, count }, index) => (
-              <div key={num} className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 text-white text-xs font-bold">
-                  {index + 1}
-                </div>
-                <div className="flex-1 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-sm flex items-center justify-center shadow-md">
-                      {num}
-                    </span>
-                    <div className="flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
-                      <div
-                        className="bg-gradient-to-r from-blue-500 to-purple-600 h-full transition-all duration-500"
-                        style={{ width: `${(count / history.length) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-600 ml-2">{count}회</span>
-                </div>
+          <div className="flex items-center gap-1.5 justify-center mt-2 flex-wrap">
+            {latestDraw.numbers.map((num) => (
+              <div
+                key={`win-${num}`}
+                className={`w-8 h-8 rounded-full ${getLottoNumberColor(num)} font-bold text-xs flex items-center justify-center shadow-inner border border-white/20`}
+              >
+                {num}
               </div>
             ))}
+            <div className="flex items-center justify-center text-white/50 text-xs mx-0.5">
+              +
+            </div>
+            <div
+              className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-500 to-gray-700 font-bold text-xs flex items-center justify-center shadow-inner ring-2 ring-white/50 relative"
+              title="보너스 번호"
+            >
+              <div className="absolute -top-1.5 -right-1.5 w-3 h-3 text-yellow-300">
+                <Star className="w-3 h-3 fill-current" />
+              </div>
+              {latestDraw.bonusNo}
+            </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* 행운의 메시지 */}
-      <div className="bg-gradient-to-br from-yellow-50 via-orange-50 to-red-50 rounded-2xl shadow-lg p-5">
-        <div className="text-center space-y-2">
-          <div className="text-3xl">🍀</div>
-          <p className="text-sm font-semibold text-gray-700">행운을 빕니다!</p>
-          <p className="text-xs text-gray-500">꾸준한 도전이<br />행운을 만듭니다</p>
+      {/* 2. 역대 최다 출현 번호 HOT 5 */}
+      <div className="bg-white rounded-2xl shadow-lg p-5 border border-gray-100">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Flame className="w-5 h-5 text-orange-500" />
+            <h3 className="text-sm font-bold text-gray-800">역대 가장 많이 나온 번호</h3>
+          </div>
+          <span className="text-[10px] text-gray-400 font-medium">1회~현재 누적</span>
+        </div>
+
+        <div className="space-y-3">
+          {ALL_TIME_HOT.map(({ num, count }, index) => (
+            <div key={`hot-${num}`} className="flex items-center gap-3 group">
+              <span className="text-sm font-black text-orange-200 w-4 group-hover:text-orange-400 transition-colors">{index + 1}</span>
+              <div className={`w-7 h-7 rounded-full ${getLottoNumberColor(num)} text-white font-bold text-xs flex items-center justify-center shadow-sm flex-shrink-0`}>
+                {num}
+              </div>
+              <div className="flex-1 flex flex-col justify-center gap-1">
+                <div className="flex justify-between items-end">
+                  <span className="text-xs font-bold text-gray-800">{num}번</span>
+                  <span className="text-xs font-black text-orange-600">{count}회 출현</span>
+                </div>
+                <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="bg-gradient-to-r from-orange-400 to-red-500 h-full transition-all duration-700 ease-out"
+                    style={{ width: `${(count / ALL_TIME_HOT[0].count) * 100}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
+
+      {/* 3. 장기 미출현 번호 */}
+      <div className="bg-white rounded-2xl shadow-lg p-5 border border-gray-100">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Snowflake className="w-5 h-5 text-blue-500" />
+            <h3 className="text-sm font-bold text-gray-800">장기 미출현 번호</h3>
+          </div>
+          <span className="text-[10px] text-blue-400 font-medium bg-blue-50 px-2 py-0.5 rounded-full">최근 10주 이상</span>
+        </div>
+
+        <div className="flex gap-2.5 flex-wrap">
+          {LONG_TERM_COLD.map(({ num, weeks }) => (
+            <div
+              key={`cold-${num}`}
+              className="flex flex-col items-center bg-gray-50 border border-gray-200 rounded-xl px-2 py-2 flex-1 min-w-[50px] transition-transform hover:-translate-y-1"
+            >
+              <div className={`w-8 h-8 rounded-full ${getLottoNumberColor(num)} text-white font-bold text-xs flex items-center justify-center shadow-sm mb-1 opacity-70`}>
+                {num}
+              </div>
+              <span className="text-[10px] text-gray-500 font-bold tracking-tighter">
+                {weeks}주째 잠수
+              </span>
+            </div>
+          ))}
+        </div>
+        <p className="text-[10px] text-gray-400 mt-3 text-center">
+          "언젠가는 나오겠지?" 수동 조합 추천 번호
+        </p>
+      </div>
+
     </div>
   );
 }

@@ -34,9 +34,8 @@ export function HistoryItem({ entry, onDelete }: HistoryItemProps) {
   };
 
   return (
-    <div className={`bg-white rounded-2xl p-3.5 sm:p-5 shadow-md hover:shadow-lg transition-shadow animate-slide-up ${
-      entry.winningInfo ? 'border-4 border-yellow-400' : ''
-    }`}>
+    <div className={`bg-white rounded-2xl p-3.5 sm:p-5 shadow-md hover:shadow-lg transition-shadow animate-slide-up ${entry.winningInfo ? 'border-4 border-yellow-400' : ''
+      }`}>
       {/* 타임스탬프 및 회차 */}
       <div className="flex items-center justify-between mb-2.5 sm:mb-3">
         <div className="flex items-center gap-2 flex-wrap">
@@ -78,29 +77,37 @@ export function HistoryItem({ entry, onDelete }: HistoryItemProps) {
       </div>
 
       {/* 번호 표시 */}
-      <div className="flex flex-wrap gap-1.5 sm:gap-3">
-        {entry.numbers.map((num) => {
+      <div className="flex flex-wrap gap-1.5 sm:gap-3 items-center">
+        {entry.numbers.map((num, i) => {
           const isMatched = entry.winningInfo?.matchedNumbers.includes(num);
+          const isBonus = i === 6;
           return (
-            <div
-              key={num}
-              className={`
-                w-9 h-9 sm:w-12 sm:h-12 rounded-full
-                ${getLottoNumberColor(num)}
-                text-white font-bold text-sm sm:text-base
-                flex items-center justify-center
-                shadow-md
-                select-none
-                relative
-                ${isMatched ? 'ring-4 ring-yellow-400 scale-110' : ''}
-              `}
-            >
-              {num}
-              {isMatched && (
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center text-xs">
-                  ✓
+            <div key={`${num}-${i}`} className="flex items-center gap-1.5 sm:gap-3">
+              {isBonus && (
+                <div className="flex items-center justify-center text-gray-300 text-lg sm:text-xl font-black">
+                  +
                 </div>
               )}
+              <div
+                className={`
+                  w-9 h-9 sm:w-12 sm:h-12 rounded-full
+                  ${isBonus ? 'bg-gradient-to-br from-gray-500 to-gray-700 ring-2 ring-gray-400' : getLottoNumberColor(num)}
+                  text-white font-bold text-sm sm:text-base
+                  flex items-center justify-center
+                  shadow-md
+                  select-none
+                  relative
+                  ${isMatched ? 'ring-4 ring-yellow-400 scale-110' : ''}
+                `}
+                title={isBonus ? '보너스 번호' : undefined}
+              >
+                {num}
+                {isMatched && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center text-xs">
+                    ✓
+                  </div>
+                )}
+              </div>
             </div>
           );
         })}

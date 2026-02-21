@@ -1,15 +1,19 @@
 /**
- * 1-45 사이의 중복되지 않는 6개의 로또 번호를 생성합니다.
+ * 1-45 사이의 중복되지 않는 6개의 로또 번호와 1개의 보너스 번호를 생성합니다.
  */
 export function generateLottoNumbers(): number[] {
   const numbers = new Set<number>();
 
-  while (numbers.size < 6) {
+  while (numbers.size < 7) {
     const num = Math.floor(Math.random() * 45) + 1;
     numbers.add(num);
   }
 
-  return Array.from(numbers).sort((a, b) => a - b);
+  const arr = Array.from(numbers);
+  const mainNumbers = arr.slice(0, 6).sort((a, b) => a - b);
+  const bonusNumber = arr[6];
+
+  return [...mainNumbers, bonusNumber];
 }
 
 /**

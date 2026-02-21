@@ -2,38 +2,7 @@ import { useMemo } from 'react';
 import { BarChart3, Flame, Snowflake, TrendingUp, Hash, Shuffle, Star } from 'lucide-react';
 import { getLottoNumberColor } from '../utils/lottoGenerator';
 
-// ─────────────────────────────────────────────
-// 데이터 (useLottoWinning의 MOCK_DRAWS와 동일)
-// ─────────────────────────────────────────────
-interface Draw {
-  drwNo: number;
-  drwNoDate: string;
-  numbers: number[];
-  bonusNo: number;
-}
-
-const DRAWS: Draw[] = [
-  { drwNo: 1160, drwNoDate: '2026-02-08', numbers: [3, 14, 22, 31, 38, 42], bonusNo: 7  },
-  { drwNo: 1159, drwNoDate: '2026-02-01', numbers: [5, 11, 19, 27, 33, 44], bonusNo: 2  },
-  { drwNo: 1158, drwNoDate: '2026-01-25', numbers: [1,  9, 18, 26, 35, 43], bonusNo: 12 },
-  { drwNo: 1157, drwNoDate: '2026-01-18', numbers: [7, 15, 23, 30, 37, 45], bonusNo: 4  },
-  { drwNo: 1156, drwNoDate: '2026-01-11', numbers: [2, 10, 20, 28, 36, 41], bonusNo: 17 },
-  { drwNo: 1155, drwNoDate: '2026-01-04', numbers: [4, 13, 21, 29, 34, 40], bonusNo: 8  },
-  { drwNo: 1154, drwNoDate: '2025-12-28', numbers: [6, 12, 24, 32, 39, 44], bonusNo: 19 },
-  { drwNo: 1153, drwNoDate: '2025-12-21', numbers: [8, 16, 25, 33, 38, 43], bonusNo: 3  },
-  { drwNo: 1152, drwNoDate: '2025-12-14', numbers: [9, 17, 26, 31, 37, 42], bonusNo: 11 },
-  { drwNo: 1151, drwNoDate: '2025-12-07', numbers: [1,  8, 19, 27, 36, 45], bonusNo: 22 },
-  { drwNo: 1150, drwNoDate: '2025-11-30', numbers: [3, 11, 20, 29, 38, 44], bonusNo: 5  },
-  { drwNo: 1149, drwNoDate: '2025-11-23', numbers: [2, 14, 23, 32, 40, 43], bonusNo: 9  },
-  { drwNo: 1148, drwNoDate: '2025-11-16', numbers: [7, 13, 22, 30, 35, 41], bonusNo: 16 },
-  { drwNo: 1147, drwNoDate: '2025-11-09', numbers: [4, 10, 18, 28, 37, 42], bonusNo: 24 },
-  { drwNo: 1146, drwNoDate: '2025-11-02', numbers: [5, 15, 24, 33, 39, 44], bonusNo: 1  },
-  { drwNo: 1145, drwNoDate: '2025-10-26', numbers: [6, 12, 21, 31, 36, 45], bonusNo: 13 },
-  { drwNo: 1144, drwNoDate: '2025-10-19', numbers: [8, 16, 25, 34, 38, 41], bonusNo: 6  },
-  { drwNo: 1143, drwNoDate: '2025-10-12', numbers: [9, 17, 26, 35, 40, 43], bonusNo: 20 },
-  { drwNo: 1142, drwNoDate: '2025-10-05', numbers: [1, 11, 22, 32, 37, 44], bonusNo: 15 },
-  { drwNo: 1141, drwNoDate: '2025-09-28', numbers: [3, 13, 23, 30, 39, 45], bonusNo: 10 },
-];
+import { RECENT_DRAWS, Draw } from '../utils/lottoData';
 
 // ─────────────────────────────────────────────
 // 번호 공 컴포넌트
@@ -130,11 +99,11 @@ function HotCold({ freq }: { freq: Record<number, number> }) {
 // ③ 구간별(색상대별) 분포
 // ─────────────────────────────────────────────
 const ZONES = [
-  { label: '1~10', range: [1, 10],  color: 'bg-yellow-400', text: 'text-yellow-700', bg: 'bg-yellow-50', border: 'border-yellow-200' },
-  { label: '11~20', range: [11, 20], color: 'bg-blue-400',   text: 'text-blue-700',   bg: 'bg-blue-50',   border: 'border-blue-200'   },
-  { label: '21~30', range: [21, 30], color: 'bg-red-400',    text: 'text-red-700',    bg: 'bg-red-50',    border: 'border-red-200'    },
-  { label: '31~40', range: [31, 40], color: 'bg-gray-400',   text: 'text-gray-700',   bg: 'bg-gray-50',   border: 'border-gray-200'   },
-  { label: '41~45', range: [41, 45], color: 'bg-green-400',  text: 'text-green-700',  bg: 'bg-green-50',  border: 'border-green-200'  },
+  { label: '1~10', range: [1, 10], color: 'bg-yellow-400', text: 'text-yellow-700', bg: 'bg-yellow-50', border: 'border-yellow-200' },
+  { label: '11~20', range: [11, 20], color: 'bg-blue-400', text: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' },
+  { label: '21~30', range: [21, 30], color: 'bg-red-400', text: 'text-red-700', bg: 'bg-red-50', border: 'border-red-200' },
+  { label: '31~40', range: [31, 40], color: 'bg-gray-400', text: 'text-gray-700', bg: 'bg-gray-50', border: 'border-gray-200' },
+  { label: '41~45', range: [41, 45], color: 'bg-green-400', text: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200' },
 ];
 
 function ZoneDistribution({ draws }: { draws: Draw[] }) {
@@ -279,12 +248,12 @@ function OddEvenAnalysis({ draws }: { draws: Draw[] }) {
 function SumDistribution({ draws }: { draws: Draw[] }) {
   const buckets = useMemo(() => {
     const ranges = [
-      { label: '~100',   min: 0,   max: 100  },
-      { label: '101~120',min: 101, max: 120  },
-      { label: '121~140',min: 121, max: 140  },
-      { label: '141~160',min: 141, max: 160  },
-      { label: '161~180',min: 161, max: 180  },
-      { label: '181~',   min: 181, max: 999  },
+      { label: '~100', min: 0, max: 100 },
+      { label: '101~120', min: 101, max: 120 },
+      { label: '121~140', min: 121, max: 140 },
+      { label: '141~160', min: 141, max: 160 },
+      { label: '161~180', min: 161, max: 180 },
+      { label: '181~', min: 181, max: 999 },
     ];
     return ranges.map((r) => ({
       ...r,
@@ -476,7 +445,7 @@ function ConsecutivePattern({ draws }: { draws: Draw[] }) {
 // 메인 컴포넌트
 // ─────────────────────────────────────────────
 export function WinningStats() {
-  const draws = DRAWS;
+  const draws = RECENT_DRAWS;
 
   const freq = useMemo(() => {
     const f: Record<number, number> = {};
@@ -510,7 +479,7 @@ export function WinningStats() {
             <div>
               <p className="text-white/70 text-xs mb-1">분석 회차</p>
               <p className="text-white font-black text-2xl sm:text-3xl">{draws.length}회</p>
-              <p className="text-white/60 text-[10px] mt-0.5">{draws[draws.length-1].drwNo}~{draws[0].drwNo}회</p>
+              <p className="text-white/60 text-[10px] mt-0.5">{draws[draws.length - 1].drwNo}~{draws[0].drwNo}회</p>
             </div>
             <div>
               <p className="text-white/70 text-xs mb-1">총 추출 번호</p>
