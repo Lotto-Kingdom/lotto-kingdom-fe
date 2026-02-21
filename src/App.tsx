@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Link } from 'react-router-dom';
 import { Header } from './components/Header';
 import { LottoGenerator } from './components/LottoGenerator';
 import { MiniHistory } from './components/MiniHistory';
@@ -11,6 +11,7 @@ import { WinningRegion } from './components/WinningRegion';
 import { WinningAmount } from './components/WinningAmount';
 import { WinningStats } from './components/WinningStats';
 import { MyAnalysis } from './components/MyAnalysis';
+import { ContactUs } from './components/ContactUs';
 import { useLottoHistory } from './hooks/useLottoHistory';
 import { useState } from 'react';
 
@@ -56,6 +57,7 @@ function App() {
           <Route path="/amount" element={<WinningAmount />} />
           <Route path="/stats" element={<WinningStats />} />
           <Route path="/my-stats" element={<MyAnalysis />} />
+          <Route path="/contact" element={<ContactUs />} />
         </Routes>
       </main>
 
@@ -86,9 +88,9 @@ function App() {
                 개인정보처리방침
               </button>
               <span>•</span>
-              <button onClick={() => alert('준비중인 페이지입니다')} className="hover:text-gray-600 transition-colors">
+              <Link to="/contact" className="hover:text-gray-600 transition-colors">
                 문의하기
-              </button>
+              </Link>
             </div>
           </div>
         </div>
