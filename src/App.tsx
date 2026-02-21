@@ -13,6 +13,7 @@ import { WinningStats } from './components/WinningStats';
 import { MyAnalysis } from './components/MyAnalysis';
 import { ContactUs } from './components/ContactUs';
 import { TermsOfService } from './components/TermsOfService';
+import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { useLottoHistory } from './hooks/useLottoHistory';
 import { useState } from 'react';
 
@@ -60,6 +61,7 @@ function App() {
           <Route path="/my-stats" element={<MyAnalysis />} />
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
         </Routes>
       </main>
 
@@ -86,9 +88,9 @@ function App() {
                 이용약관
               </Link>
               <span>•</span>
-              <button onClick={() => alert('준비중인 페이지입니다')} className="hover:text-gray-600 transition-colors">
+              <Link to="/privacy" className="hover:text-gray-600 transition-colors">
                 개인정보처리방침
-              </button>
+              </Link>
               <span>•</span>
               <Link to="/contact" className="hover:text-gray-600 transition-colors">
                 문의하기
