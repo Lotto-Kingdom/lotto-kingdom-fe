@@ -99,34 +99,30 @@ export function LottoHistory({ history, onDelete, onClearAll, onUpdate: _onUpdat
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setActiveTab('history')}
-                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all ${
-                  activeTab === 'history'
+                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all ${activeTab === 'history'
                     ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md'
                     : 'bg-white text-gray-600 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 <History className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span>생성 기록</span>
-                <span className={`px-1.5 py-0.5 rounded-full text-xs font-semibold ${
-                  activeTab === 'history' ? 'bg-white/20' : 'bg-gray-100'
-                }`}>
+                <span className={`px-1.5 py-0.5 rounded-full text-xs font-semibold ${activeTab === 'history' ? 'bg-white/20' : 'bg-gray-100'
+                  }`}>
                   {history.length}
                 </span>
               </button>
 
               <button
                 onClick={() => setActiveTab('winning')}
-                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all ${
-                  activeTab === 'winning'
+                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all ${activeTab === 'winning'
                     ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-md'
                     : 'bg-white text-gray-600 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 <span className="text-base sm:text-lg">🏆</span>
                 <span>당첨 내역</span>
-                <span className={`px-1.5 py-0.5 rounded-full text-xs font-semibold ${
-                  activeTab === 'winning' ? 'bg-white/20' : 'bg-gray-100'
-                }`}>
+                <span className={`px-1.5 py-0.5 rounded-full text-xs font-semibold ${activeTab === 'winning' ? 'bg-white/20' : 'bg-gray-100'
+                  }`}>
                   {winningHistory.length}
                 </span>
               </button>
@@ -251,7 +247,7 @@ export function LottoHistory({ history, onDelete, onClearAll, onUpdate: _onUpdat
             </div>
           ) : (
             filteredHistory.map((entry) => (
-              <HistoryItem key={entry.id} entry={entry} onDelete={onDelete} />
+              <HistoryItem key={entry.id} entry={entry} onDelete={onDelete} onUpdate={_onUpdate} />
             ))
           )}
         </div>

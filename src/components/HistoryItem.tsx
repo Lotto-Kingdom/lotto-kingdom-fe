@@ -6,9 +6,10 @@ import { formatDate, getLottoNumberColor } from '../utils/lottoGenerator';
 interface HistoryItemProps {
   entry: LottoNumber;
   onDelete: (id: string) => void;
+  onUpdate?: (id: string, updates: Partial<LottoNumber>) => void;
 }
 
-export function HistoryItem({ entry, onDelete }: HistoryItemProps) {
+export function HistoryItem({ entry, onDelete, onUpdate }: HistoryItemProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -21,6 +22,12 @@ export function HistoryItem({ entry, onDelete }: HistoryItemProps) {
   const handleDelete = () => {
     if (window.confirm('이 번호를 삭제하시겠습니까?')) {
       onDelete(entry.id);
+    }
+  };
+
+  const handleToggleBought = () => {
+    if (onUpdate) {
+      onUpdate(entry.id, { isBought: !entry.isBought });
     }
   };
 
@@ -48,11 +55,33 @@ export function HistoryItem({ entry, onDelete }: HistoryItemProps) {
               <span>{getRankText(entry.winningInfo.rank)} 당첨</span>
             </span>
           )}
+          {entry.isBought && (
+            <span className="px-2 py-0.5 bg-gradient-to-r from-green-400 to-emerald-500 text-white text-xs font-bold rounded-full whitespace-nowrap flex items-center gap-1 shadow-sm">
+              <Check className="w-3 h-3" />
+              <span>구매완료</span>
+            </span>
+          )}
           <span className="text-xs sm:text-sm text-gray-500 font-medium">
             {formatDate(entry.timestamp)}
           </span>
         </div>
         <div className="flex gap-1 sm:gap-2">
+          {/* 구매 여부 토글 버튼 */}
+          {onUpdate && (
+            <button
+              onClick={handleToggleBought}
+              className={`p-2 rounded-lg transition-colors touch-manipulation flex flex-col items-center justify-center gap-0.5 ${entry.isBought
+                  ? 'text-green-600 bg-green-50 hover:bg-green-100 active:bg-green-200'
+                  : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600 active:bg-gray-200'
+                }`}
+              title={entry.isBought ? '구매 취소' : '구매 완료 표시'}
+            >
+              <div className={`w-4 h-4 rounded border flex items-center justify-center ${entry.isBought ? 'bg-green-500 border-green-500' : 'border-gray-400'
+                }`}>
+                {entry.isBought && <Check className="w-3 h-3 text-white" />}
+              </div>
+            </button>
+          )}
           {/* 복사 버튼 */}
           <button
             onClick={handleCopy}

@@ -4,6 +4,7 @@ export interface LottoNumber {
   timestamp: number;
   date: string;
   round: number; // 로또 회차
+  isBought?: boolean; // 구매 여부
   winningInfo?: {
     rank: number; // 1~5등
     matchCount: number; // 일치 개수
