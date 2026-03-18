@@ -6,7 +6,7 @@ import { StoreFinder } from './components/StoreFinder';
 import { NearbyStore } from './components/NearbyStore';
 import { StatisticsPanel } from './components/StatisticsPanel';
 import { MobileStatistics } from './components/MobileStatistics';
-import { WinningHistory } from './components/WinningHistory';
+import { WinningPage } from './components/WinningPage';
 import { WinningRegion } from './components/WinningRegion';
 import { WinningAmount } from './components/WinningAmount';
 import { WinningStats } from './components/WinningStats';
@@ -50,12 +50,12 @@ function App() {
     <div className="min-h-screen bg-purple-50 flex flex-col">
       <Header />
 
-      <main className="flex-grow container mx-auto px-4 py-4 sm:py-8 pb-8 sm:pb-12 max-w-7xl">
+      <main className="flex-grow container mx-auto px-4 py-4 sm:py-8 pb-24 sm:pb-12 max-w-7xl">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/store/nearby" element={<NearbyStore />} />
-          <Route path="/winning" element={<WinningHistory />} />
-          <Route path="/region" element={<WinningRegion />} />
+          <Route path="/winning" element={<WinningPage />} />
+          <Route path="/region" element={<WinningPage />} />
           <Route path="/amount" element={<WinningAmount />} />
           <Route path="/stats" element={<WinningStats />} />
           <Route path="/my-stats" element={<MyAnalysis />} />

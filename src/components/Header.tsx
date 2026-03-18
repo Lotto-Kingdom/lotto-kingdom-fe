@@ -1,16 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Menu, X, TrendingUp, MapPin, User, LogOut, LogIn, Dices } from 'lucide-react';
+import { TrendingUp, MapPin, User, LogOut, LogIn, Dices, Trophy } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AuthModal } from './AuthModal';
-
+import { BottomNav } from './BottomNav';
 import { ChevronDown } from 'lucide-react';
 
 export function Header() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [authModal, setAuthModal] = useState<'login' | 'signup' | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -23,21 +21,22 @@ export function Header() {
       path: '/',
     },
     {
-      label: '당첨·통계',
-      icon: TrendingUp,
+      label: '당첨',
+      icon: Trophy,
       submenu: [
-        { label: '역대 당첨 결과', path: '/winning' },
-        { label: '당첨 금액 안내', path: '/amount' },
-        { label: '로또 통계', path: '/stats' },
+        { label: '역대 당첨번호', path: '/winning' },
+        { label: '역대 당첨판매점', path: '/region' },
       ],
+    },
+    {
+      label: '통계',
+      icon: TrendingUp,
+      path: '/stats',
     },
     {
       label: '판매점 찾기',
       icon: MapPin,
-      submenu: [
-        { label: '내 주변 판매점', path: '/store/nearby' },
-        { label: '1등 당첨 지역', path: '/region' },
-      ],
+      path: '/store/nearby',
     },
   ];
 
@@ -47,7 +46,6 @@ export function Header() {
     } else {
       alert('준비중인 페이지입니다');
     }
-    setIsMenuOpen(false);
   };
 
   // 바깥 클릭 시 드롭다운 닫기
@@ -66,10 +64,7 @@ export function Header() {
         return;
       }
 
-      if (!target.closest('.nav-dropdown-container')) {
-        // Only close if it's not a mobile accordion toggle to prevent double-firing
-        setActiveDropdown(null);
-      }
+      // desktop dropdowns are CSS hover-based, nothing to close here
     };
     document.addEventListener('pointerdown', handler);
     return () => document.removeEventListener('pointerdown', handler);
@@ -97,7 +92,7 @@ export function Header() {
           <div className="flex items-center justify-between h-16 sm:h-20">
             {/* 로고 */}
             <button
-              onClick={() => { navigate('/'); setIsMenuOpen(false); }}
+              onClick={() => navigate('/')}
               className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity"
             >
               <div className="relative w-10 h-10 sm:w-12 sm:h-12">
@@ -243,139 +238,26 @@ export function Header() {
               </div>
             </div>
 
-            {/* 모바일: 우측 버튼들 (내 번호 아이콘, 유저, 햄버거) */}
-            <div className="md:hidden flex items-center gap-1.5 sm:gap-2">
-              <button
-                onClick={() => handleMenuClick('/my-stats')}
-                className={`p-2 rounded-lg transition-colors ${location.pathname === '/my-stats' ? 'bg-orange-50 text-orange-600' : 'text-gray-700 hover:bg-gray-100'}`}
-                aria-label="내 번호"
-              >
-                <User className="w-5 h-5 sm:w-6 sm:h-6" />
-              </button>
-
+            {/* 모바일: 로고 우측 로그인 버튼 */}
+            <div className="md:hidden">
               {user ? (
                 <button
                   onClick={() => setUserMenuOpen(o => !o)}
-                  className="relative w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                  className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm"
                 >
                   {user.nickname[0].toUpperCase()}
                 </button>
               ) : (
                 <button
                   onClick={() => setAuthModal('login')}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  aria-label="로그인"
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm font-semibold text-blue-600 border border-blue-200 rounded-xl"
                 >
-                  <LogIn className="w-5 h-5 text-gray-700" />
+                  <LogIn className="w-4 h-4" />로그인
                 </button>
               )}
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                aria-label="메뉴"
-              >
-                {isMenuOpen ? <X className="w-6 h-6 text-gray-700" /> : <Menu className="w-6 h-6 text-gray-700" />}
-              </button>
             </div>
           </div>
         </div>
-
-        {/* 모바일 드롭다운 */}
-        {isMenuOpen && (
-          <div className="md:hidden bg-white border-t border-gray-100 shadow-lg animate-slide-up mobile-nav-container">
-            <nav className="container mx-auto px-4 py-3 space-y-1 max-h-[70vh] overflow-y-auto">
-              {menuGroups.map((group, index) => {
-                const isDropdownActive = group.submenu?.some(sub => location.pathname === sub.path);
-                const isMainMenuActive = group.path && location.pathname === group.path;
-                const isActive = isMainMenuActive || isDropdownActive;
-
-                return (
-                  <div key={index} className="flex flex-col nav-dropdown-container">
-                    <button
-                      onClick={() => {
-                        if (group.path) {
-                          handleMenuClick(group.path);
-                        } else {
-                          setActiveDropdown(activeDropdown === group.label ? null : group.label);
-                        }
-                      }}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 active:scale-95 ${isActive
-                        ? 'bg-gradient-to-r from-blue-50 to-purple-50'
-                        : 'hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50'
-                        }`}
-                    >
-                      <group.icon className={`w-5 h-5 ${isActive ? 'text-blue-600' : 'text-gray-600'}`} />
-                      <span className={`font-medium flex-1 text-left ${isActive ? 'text-blue-600' : 'text-gray-700'}`}>
-                        {group.label}
-                      </span>
-                      {group.submenu && (
-                        <ChevronDown className={`w-4 h-4 transition-transform ${activeDropdown === group.label ? 'rotate-180 text-blue-600' : 'text-gray-400'}`} />
-                      )}
-                      {isActive && !group.submenu && <span className="ml-auto w-1.5 h-1.5 bg-blue-500 rounded-full" />}
-                    </button>
-
-                    {/* 모바일 서브메뉴 아코디언 */}
-                    {group.submenu && activeDropdown === group.label && (
-                      <div className="pl-12 pr-4 py-2 space-y-1 border-l-2 border-blue-100 ml-6 my-1">
-                        {group.submenu.map((sub, i) => (
-                          <button
-                            key={i}
-                            onClick={() => handleMenuClick(sub.path)}
-                            className={`w-full text-left py-2.5 text-sm transition-colors rounded-lg px-3 ${location.pathname === sub.path
-                              ? 'text-blue-600 font-bold bg-blue-50/50'
-                              : 'text-gray-600 hover:text-blue-600 font-medium'
-                              }`}
-                          >
-                            {sub.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {/* 모바일 로그인/로그아웃 */}
-              <div className="border-t border-gray-100 pt-2 mt-2">
-                {user ? (
-                  <>
-                    <div className="flex items-center gap-3 px-4 py-2">
-                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                        {user.nickname[0].toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-gray-800">{user.nickname}</p>
-                        <p className="text-xs text-gray-400">{user.email}</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => { handleLogout(); setIsMenuOpen(false); }}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 transition-colors"
-                    >
-                      <LogOut className="w-5 h-5" />
-                      <span className="font-medium">로그아웃</span>
-                    </button>
-                  </>
-                ) : (
-                  <div className="flex gap-2 px-4 pb-1">
-                    <button
-                      onClick={() => { setAuthModal('login'); setIsMenuOpen(false); }}
-                      className="flex-1 py-2.5 text-sm font-bold text-blue-600 border border-blue-200 rounded-xl hover:bg-blue-50 transition-colors"
-                    >
-                      로그인
-                    </button>
-                    <button
-                      onClick={() => { setAuthModal('signup'); setIsMenuOpen(false); }}
-                      className="flex-1 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl hover:opacity-90 transition-opacity"
-                    >
-                      회원가입
-                    </button>
-                  </div>
-                )}
-              </div>
-            </nav>
-          </div>
-        )}
 
         {/* 모바일 유저 드롭다운 */}
         {userMenuOpen && user && (
@@ -400,6 +282,15 @@ export function Header() {
           </div>
         )}
       </header>
+
+      {/* 모바일 하단 네비게이션 */}
+      <BottomNav onLoginClick={() => {
+        if (user) {
+          setUserMenuOpen(o => !o);
+        } else {
+          setAuthModal('login');
+        }
+      }} />
 
       {/* 인증 모달 */}
       {authModal && (
