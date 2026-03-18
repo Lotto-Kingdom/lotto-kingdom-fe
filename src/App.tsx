@@ -7,7 +7,6 @@ import { NearbyStore } from './components/NearbyStore';
 import { StatisticsPanel } from './components/StatisticsPanel';
 import { MobileStatistics } from './components/MobileStatistics';
 import { WinningPage } from './components/WinningPage';
-import { WinningRegion } from './components/WinningRegion';
 import { WinningAmount } from './components/WinningAmount';
 import { WinningStats } from './components/WinningStats';
 import { MyAnalysis } from './components/MyAnalysis';
