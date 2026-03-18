@@ -1,29 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <defs>
-    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#f97316;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#ef4444;stop-opacity:1" />
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#9333ea;stop-opacity:1" />
     </linearGradient>
     <filter id="shadow">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#00000040"/>
     </filter>
   </defs>
 
-  <!-- 외부 그라디언트 공 -->
-  <circle cx="50" cy="50" r="45" fill="url(#gradient)" filter="url(#shadow)"/>
+  <!-- 배경 둥근 사각형 (로고와 동일한 rounded-xl 스타일) -->
+  <rect x="5" y="5" width="90" height="90" rx="20" ry="20" fill="url(#bg)" filter="url(#shadow)"/>
 
-  <!-- 내부 흰색 원 -->
-  <circle cx="50" cy="50" r="32" fill="rgba(255,255,255,0.9)"/>
-
-  <!-- 645 텍스트 -->
-  <text x="50" y="62"
-        font-family="system-ui, -apple-system, sans-serif"
-        font-size="28"
-        font-weight="900"
-        fill="#ea580c"
-        text-anchor="middle">645</text>
-
-  <!-- 광택 효과 -->
-  <circle cx="30" cy="30" r="8" fill="rgba(255,255,255,0.4)" filter="blur(2px)"/>
+  <!-- 왕관 아이콘 (lucide Crown 스타일) -->
+  <!-- 왕관 바닥 띠 -->
+  <rect x="22" y="63" width="56" height="9" rx="3" fill="white" opacity="0.95"/>
+  <!-- 왕관 본체 - 왼쪽 포인트 -->
+  <polygon points="22,63 22,42 35,54 50,28 65,54 78,42 78,63" fill="white" opacity="0.95"/>
+  <!-- 왕관 꼭대기 세 보석 -->
+  <circle cx="50" cy="26" r="4" fill="white" opacity="0.95"/>
+  <circle cx="22" cy="40" r="3.5" fill="white" opacity="0.85"/>
+  <circle cx="78" cy="40" r="3.5" fill="white" opacity="0.85"/>
 </svg>
