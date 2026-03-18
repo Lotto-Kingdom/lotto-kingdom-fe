@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { TrendingUp, MapPin, User, LogOut, LogIn, Dices, Trophy } from 'lucide-react';
+import { TrendingUp, MapPin, User, LogOut, LogIn, Dices, Trophy, Crown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AuthModal } from './AuthModal';
 import { BottomNav } from './BottomNav';
@@ -95,6 +95,9 @@ export function Header() {
               onClick={() => navigate('/')}
               className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity"
             >
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center shadow-md flex-shrink-0">
+                <Crown className="w-5 h-5 sm:w-6 sm:h-6 text-white" strokeWidth={2.5} />
+              </div>
               <div>
                 <h1 className="text-xl sm:text-3xl font-black bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent leading-none">
                   로또나라
