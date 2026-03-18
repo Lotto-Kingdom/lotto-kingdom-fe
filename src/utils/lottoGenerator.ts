@@ -1,19 +1,153 @@
+export type GenerationMode = 'hot' | 'cold' | 'balanced' | 'random' | 'ai';
+
+const RECENT_NUMBERS = [
+  [3, 14, 22, 31, 38, 42], [5, 11, 19, 27, 33, 44], [1, 9, 18, 26, 35, 43],
+  [7, 15, 23, 30, 37, 45], [2, 10, 20, 28, 36, 41], [4, 13, 21, 29, 34, 40],
+  [6, 12, 24, 32, 39, 44], [8, 16, 25, 33, 38, 43], [9, 17, 26, 31, 37, 42],
+  [1, 8, 19, 27, 36, 45],
+];
+
+const ALL_TIME_HOT_NUMS = [43, 34, 12, 27, 1];
+
+function weightedSample(weights: Record<number, number>, n: number): number[] {
+  const selected: number[] = [];
+  const available = { ...weights };
+  while (selected.length < n) {
+    const keys = Object.keys(available).map(Number);
+    if (keys.length === 0) break;
+    const total = keys.reduce((sum, k) => sum + available[k], 0);
+    let rand = Math.random() * total;
+    for (const num of keys) {
+      rand -= available[num];
+      if (rand <= 0) {
+        selected.push(num);
+        delete available[num];
+        break;
+      }
+    }
+  }
+  return selected;
+}
+
+function sampleN(arr: number[], n: number): number[] {
+  return [...arr].sort(() => Math.random() - 0.5).slice(0, n);
+}
+
+function addBonusNumber(main: number[]): number[] {
+  let bonus: number;
+  do { bonus = Math.floor(Math.random() * 45) + 1; } while (main.includes(bonus));
+  return [...main, bonus];
+}
+
+/** pool에서 count개를 핫 번호 가중치로 선택 */
+function pickHot(pool: number[], count: number): number[] {
+  const weights: Record<number, number> = {};
+  pool.forEach((n) => { weights[n] = 1; });
+  RECENT_NUMBERS.forEach((draw) => {
+    draw.forEach((n) => { if (weights[n] !== undefined) weights[n] += 3; });
+  });
+  return weightedSample(weights, count);
+}
+
+/** pool에서 count개를 콜드 번호 가중치로 선택 */
+function pickCold(pool: number[], count: number): number[] {
+  const weights: Record<number, number> = {};
+  pool.forEach((n) => { weights[n] = 6; });
+  RECENT_NUMBERS.forEach((draw) => {
+    draw.forEach((n) => { if (weights[n] !== undefined) weights[n] = Math.max(1, weights[n] - 2); });
+  });
+  return weightedSample(weights, count);
+}
+
+/** pool에서 count개를 홀짝 밸런스(fixed 기준 보정)로 선택 */
+function pickBalanced(pool: number[], count: number, fixed: number[]): number[] {
+  const fixedOdds = fixed.filter((n) => n % 2 !== 0).length;
+  const fixedEvens = fixed.filter((n) => n % 2 === 0).length;
+  const needOdds = Math.max(0, 3 - fixedOdds);
+  const needEvens = Math.max(0, 3 - fixedEvens);
+
+  const poolOdds = pool.filter((n) => n % 2 !== 0);
+  const poolEvens = pool.filter((n) => n % 2 === 0);
+
+  const selected = [
+    ...sampleN(poolOdds, Math.min(needOdds, poolOdds.length)),
+    ...sampleN(poolEvens, Math.min(needEvens, poolEvens.length)),
+  ];
+
+  // 홀짝 제약으로 부족한 경우 나머지 pool에서 보충
+  if (selected.length < count) {
+    const rest = pool.filter((n) => !selected.includes(n));
+    selected.push(...sampleN(rest, count - selected.length));
+  }
+  return selected.slice(0, count);
+}
+
+/** pool에서 count개를 순수 랜덤으로 선택 */
+function pickRandom(pool: number[], count: number): number[] {
+  return sampleN(pool, count);
+}
+
+/** pool에서 count개를 AI 알고리즘으로 선택 */
+function pickAI(pool: number[], count: number): number[] {
+  const ranges = [[1, 9], [10, 19], [20, 29], [30, 39], [40, 45]];
+  const picks: number[] = [];
+
+  // 가능한 구간에서 골고루 선택
+  const availableRanges = ranges.filter(([min, max]) => pool.some((n) => n >= min && n <= max));
+  const chosenRangeIdxs = sampleN(availableRanges.map((_, i) => i), Math.min(count - 1, availableRanges.length));
+
+  chosenRangeIdxs.forEach((ri) => {
+    const [min, max] = availableRanges[ri];
+    const rangePool = pool.filter((n) => n >= min && n <= max && !picks.includes(n));
+    if (rangePool.length > 0) picks.push(rangePool[Math.floor(Math.random() * rangePool.length)]);
+  });
+
+  // 나머지는 역대 핫넘버 가중치로 보충
+  const remaining = pool.filter((n) => !picks.includes(n));
+  const weights: Record<number, number> = {};
+  remaining.forEach((n) => { weights[n] = 2; });
+  ALL_TIME_HOT_NUMS.forEach((n) => { if (weights[n] !== undefined) weights[n] = 8; });
+  picks.push(...weightedSample(weights, count - picks.length));
+
+  return picks.slice(0, count);
+}
+
 /**
  * 1-45 사이의 중복되지 않는 6개의 로또 번호와 1개의 보너스 번호를 생성합니다.
+ * @param mode 생성 방식
+ * @param fixedNumbers 반드시 포함할 번호 (최대 5개)
+ * @param excludedNumbers 절대 포함하지 않을 번호
  */
-export function generateLottoNumbers(): number[] {
-  const numbers = new Set<number>();
+export function generateLottoNumbers(
+  mode: GenerationMode = 'random',
+  fixedNumbers: number[] = [],
+  excludedNumbers: number[] = [],
+): number[] {
+  const fixed = fixedNumbers.slice(0, 5);
+  const pool = Array.from({ length: 45 }, (_, i) => i + 1)
+    .filter((n) => !fixed.includes(n) && !excludedNumbers.includes(n));
 
-  while (numbers.size < 7) {
-    const num = Math.floor(Math.random() * 45) + 1;
-    numbers.add(num);
+  const need = 6 - fixed.length;
+
+  // pool이 부족한 경우 랜덤 폴백
+  if (pool.length < need) {
+    const fallback = Array.from({ length: 45 }, (_, i) => i + 1).filter((n) => !fixed.includes(n));
+    const extra = sampleN(fallback, need);
+    const main = [...fixed, ...extra].sort((a, b) => a - b);
+    return addBonusNumber(main);
   }
 
-  const arr = Array.from(numbers);
-  const mainNumbers = arr.slice(0, 6).sort((a, b) => a - b);
-  const bonusNumber = arr[6];
+  let picked: number[];
+  switch (mode) {
+    case 'hot':      picked = pickHot(pool, need); break;
+    case 'cold':     picked = pickCold(pool, need); break;
+    case 'balanced': picked = pickBalanced(pool, need, fixed); break;
+    case 'ai':       picked = pickAI(pool, need); break;
+    default:         picked = pickRandom(pool, need);
+  }
 
-  return [...mainNumbers, bonusNumber];
+  const main = [...fixed, ...picked].sort((a, b) => a - b);
+  return addBonusNumber(main);
 }
 
 /**

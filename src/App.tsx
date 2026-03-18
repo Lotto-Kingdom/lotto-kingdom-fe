@@ -47,7 +47,7 @@ function HomePage() {
 
 function App() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex flex-col">
+    <div className="min-h-screen bg-purple-50 flex flex-col">
       <Header />
 
       <main className="flex-grow container mx-auto px-4 py-4 sm:py-8 pb-8 sm:pb-12 max-w-7xl">
