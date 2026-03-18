@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import {
-  MapPin, Trophy, Store, ChevronLeft, ChevronRight, ChevronDown,
-  X, Star, Award, TrendingUp, Zap, Hash, Crown, Copy, Check,
+  MapPin, Trophy, Store, ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
+  X, Star, Award, TrendingUp, Zap, Hash, Crown, Copy, Check, Search, Filter, RefreshCw,
 } from 'lucide-react';
 import {
   MOCK_STORES,
@@ -349,8 +349,12 @@ export function WinningRegion() {
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [selectedStore, setSelectedStore] = useState<WinningStore | null>(null);
   const [page, setPage] = useState(1);
-  const [showAllTop, setShowAllTop] = useState(false);   // TOP 5 → TOP 10 토글
+  const [showAllTop, setShowAllTop] = useState(false);
   const [regionExpanded, setRegionExpanded] = useState(false);
+  const [roundSearchInput, setRoundSearchInput] = useState('');
+  const [searchedRound, setSearchedRound] = useState<number | null>(null);
+  const [roundNotFound, setRoundNotFound] = useState(false);
+  const [isRoundFilterExpanded, setIsRoundFilterExpanded] = useState(false);
 
   const regionStats = useMemo(() => getRegionStats(), []);
   const maxRegionCount = regionStats[0]?.rank1Count ?? 1;
@@ -363,11 +367,17 @@ export function WinningRegion() {
   const displayedTopStores = showAllTop ? sortedStores.slice(0, 10) : sortedStores.slice(0, TOP_N);
   const maxStoreCount = sortedStores[0]?.rank1Count ?? 1;
 
-  // 회차 목록
+  // 회차 목록 (지역 필터)
   const filteredRounds = useMemo(() => {
     if (!selectedRegion) return MOCK_ROUNDS;
     return MOCK_ROUNDS.filter((r) => r.region === selectedRegion);
   }, [selectedRegion]);
+
+  // 회차 검색 결과
+  const roundSearchResult = useMemo(() => {
+    if (searchedRound === null) return null;
+    return MOCK_ROUNDS.find((r) => r.drwNo === searchedRound) ?? null;
+  }, [searchedRound]);
 
   const totalPages = Math.ceil(filteredRounds.length / PAGE_SIZE);
   const displayedRounds = filteredRounds.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -379,6 +389,24 @@ export function WinningRegion() {
       setSelectedRegion(region);
       setPage(1);
     }
+  };
+
+  const handleRoundSearch = () => {
+    const n = parseInt(roundSearchInput.trim());
+    if (!n || n < 1) return;
+    const found = MOCK_ROUNDS.find((r) => r.drwNo === n);
+    setRoundNotFound(!found);
+    setSearchedRound(n);
+  };
+
+  const handleRoundSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleRoundSearch();
+  };
+
+  const handleClearRoundSearch = () => {
+    setSearchedRound(null);
+    setRoundSearchInput('');
+    setRoundNotFound(false);
   };
 
   const handleStoreClick = (storeId: string) => {
@@ -568,11 +596,16 @@ export function WinningRegion() {
 
       {/* ⑤ 회차별 당첨 판매점 목록 */}
       <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl shadow-lg p-4 sm:p-6">
-        <div className="flex items-center justify-between mb-3">
+        {/* 헤더 */}
+        <div className="flex items-center justify-between mb-4">
           <h3 className="font-black text-gray-800 text-base sm:text-lg flex items-center gap-2">
             <Store className="w-5 h-5 text-purple-500" />
             회차별 당첨 판매점
-            {selectedRegion ? (
+            {roundSearchResult ? (
+              <span className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white text-xs font-bold text-purple-700 border border-purple-200 shadow-sm">
+                {roundSearchResult.drwNo}회
+              </span>
+            ) : selectedRegion ? (
               <span className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white text-xs font-bold text-gray-700 border border-gray-200 shadow-sm">
                 <MapPin className="w-3 h-3" />
                 {selectedRegion} 필터
@@ -583,7 +616,7 @@ export function WinningRegion() {
               </span>
             )}
           </h3>
-          {selectedRegion && (
+          {selectedRegion && !roundSearchResult && (
             <button
               onClick={() => { setSelectedRegion(null); setPage(1); }}
               className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800 bg-white hover:bg-gray-100 transition-colors px-3 py-1.5 rounded-xl border border-gray-200"
@@ -594,93 +627,185 @@ export function WinningRegion() {
           )}
         </div>
 
-        {/* 모바일 지역 필터 칩 */}
-        <div className="flex gap-2 overflow-x-auto pb-1 mb-3 sm:hidden no-scrollbar">
+        {/* 회차 검색 필터 */}
+        <div className="mb-4">
+          {/* 모바일: 토글 */}
           <button
-            onClick={() => { setSelectedRegion(null); setPage(1); }}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              selectedRegion === null
-                ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-sm'
-                : 'bg-white border border-gray-200 text-gray-600'
-            }`}
+            onClick={() => setIsRoundFilterExpanded(!isRoundFilterExpanded)}
+            className="lg:hidden w-full flex items-center justify-between p-3 bg-white rounded-xl hover:bg-gray-50 transition-colors touch-manipulation mb-2"
           >
-            전체
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">
+                회차 검색
+                {roundSearchResult && (
+                  <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
+                    {roundSearchResult.drwNo}회
+                  </span>
+                )}
+              </span>
+            </div>
+            {isRoundFilterExpanded ? (
+              <ChevronUp className="w-4 h-4 text-gray-600" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-gray-600" />
+            )}
           </button>
-          {regionStats.map((stat) => {
-            const c = regionColor(stat.name);
-            const active = selectedRegion === stat.name;
-            return (
+
+          {/* 데스크톱: 항상 표시 */}
+          <div className="hidden lg:flex items-center gap-2 mb-2">
+            <Filter className="w-4 h-4 text-gray-600" />
+            <label className="text-sm font-medium text-gray-700">회차 검색</label>
+          </div>
+
+          <div className={`space-y-2 ${isRoundFilterExpanded ? 'block' : 'hidden'} lg:block`}>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                min={1}
+                value={roundSearchInput}
+                onChange={(e) => setRoundSearchInput(e.target.value)}
+                onKeyDown={handleRoundSearchKeyDown}
+                placeholder="조회할 회차를 입력하세요 (예: 1150)"
+                className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-700 placeholder:text-gray-400 focus:border-purple-400 focus:outline-none transition-colors"
+              />
               <button
-                key={stat.name}
-                onClick={() => handleRegionClick(stat.name)}
-                className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  active ? `${c.badge} text-white shadow-sm` : `${c.bg} ${c.text} border ${c.border}`
-                }`}
+                onClick={handleRoundSearch}
+                className="px-4 py-2 sm:py-2.5 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-xl text-sm font-bold hover:shadow-md transition-all flex items-center gap-1.5 whitespace-nowrap"
               >
-                {stat.name}
-                <span className={`text-[10px] font-black ${active ? 'text-white/80' : ''}`}>
-                  {stat.rank1Count}
-                </span>
+                <Search className="w-4 h-4" />
+                검색
               </button>
-            );
-          })}
+              {searchedRound !== null && (
+                <button
+                  onClick={handleClearRoundSearch}
+                  className="px-3 py-2 sm:py-2.5 bg-gray-500 hover:bg-gray-600 text-white rounded-xl text-sm font-semibold transition-colors whitespace-nowrap"
+                >
+                  전체
+                </button>
+              )}
+            </div>
+
+            {/* 검색 결과 상태 (데스크톱) */}
+            {roundSearchResult && (
+              <div className="hidden lg:flex items-center gap-2">
+                <span className="text-xs text-gray-600">검색 결과:</span>
+                <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
+                  제 {roundSearchResult.drwNo}회 ({roundSearchResult.drwNoDate}) — {roundSearchResult.storeName}
+                </span>
+              </div>
+            )}
+            {roundNotFound && searchedRound !== null && !roundSearchResult && (
+              <p className="text-xs text-red-500 font-medium px-1">
+                {searchedRound}회차의 당첨 판매점 정보가 없습니다.
+              </p>
+            )}
+          </div>
         </div>
 
-        {displayedRounds.length === 0 ? (
-          <div className="bg-white rounded-2xl p-10 text-center border border-gray-100">
-            <MapPin className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-            <p className="text-gray-400 text-sm font-medium">해당 지역의 당첨 이력이 없습니다.</p>
-          </div>
+        {/* 검색 결과 모드 */}
+        {searchedRound !== null ? (
+          roundSearchResult ? (
+            <div className="space-y-2">
+              <RoundRow round={roundSearchResult} onStoreClick={handleStoreClick} />
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl p-10 text-center border border-gray-100">
+              <RefreshCw className="w-8 h-8 text-gray-200 mx-auto mb-3" />
+              <p className="text-gray-400 text-sm font-medium">{searchedRound}회차의 당첨 판매점 정보가 없습니다.</p>
+            </div>
+          )
         ) : (
-          <div className="space-y-2">
-            {displayedRounds.map((round) => (
-              <RoundRow key={round.drwNo} round={round} onStoreClick={handleStoreClick} />
-            ))}
-          </div>
-        )}
-
-        {/* 페이지네이션 */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-1.5 mt-5">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-              .reduce<(number | '...')[]>((acc, p, idx, arr) => {
-                if (idx > 0 && typeof arr[idx - 1] === 'number' && (p as number) - (arr[idx - 1] as number) > 1) acc.push('...');
-                acc.push(p);
-                return acc;
-              }, [])
-              .map((p, idx) =>
-                p === '...' ? (
-                  <span key={`e-${idx}`} className="px-2 text-gray-400 text-sm">…</span>
-                ) : (
+          <>
+            {/* 모바일 지역 필터 칩 */}
+            <div className="flex gap-2 overflow-x-auto pb-1 mb-3 sm:hidden no-scrollbar">
+              <button
+                onClick={() => { setSelectedRegion(null); setPage(1); }}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  selectedRegion === null
+                    ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-sm'
+                    : 'bg-white border border-gray-200 text-gray-600'
+                }`}
+              >
+                전체
+              </button>
+              {regionStats.map((stat) => {
+                const c = regionColor(stat.name);
+                const active = selectedRegion === stat.name;
+                return (
                   <button
-                    key={p}
-                    onClick={() => setPage(p as number)}
-                    className={`w-9 h-9 rounded-xl text-sm font-bold transition-all ${
-                      page === p
-                        ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-md'
-                        : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                    key={stat.name}
+                    onClick={() => handleRegionClick(stat.name)}
+                    className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                      active ? `${c.badge} text-white shadow-sm` : `${c.bg} ${c.text} border ${c.border}`
                     }`}
                   >
-                    {p}
+                    {stat.name}
+                    <span className={`text-[10px] font-black ${active ? 'text-white/80' : ''}`}>
+                      {stat.rank1Count}
+                    </span>
                   </button>
-                )
-              )}
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+                );
+              })}
+            </div>
+
+            {displayedRounds.length === 0 ? (
+              <div className="bg-white rounded-2xl p-10 text-center border border-gray-100">
+                <MapPin className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+                <p className="text-gray-400 text-sm font-medium">해당 지역의 당첨 이력이 없습니다.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {displayedRounds.map((round) => (
+                  <RoundRow key={round.drwNo} round={round} onStoreClick={handleStoreClick} />
+                ))}
+              </div>
+            )}
+
+            {/* 페이지네이션 */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-1.5 mt-5">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                  .reduce<(number | '...')[]>((acc, p, idx, arr) => {
+                    if (idx > 0 && typeof arr[idx - 1] === 'number' && (p as number) - (arr[idx - 1] as number) > 1) acc.push('...');
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((p, idx) =>
+                    p === '...' ? (
+                      <span key={`e-${idx}`} className="px-2 text-gray-400 text-sm">…</span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => setPage(p as number)}
+                        className={`w-9 h-9 rounded-xl text-sm font-bold transition-all ${
+                          page === p
+                            ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-md'
+                            : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    )
+                  )}
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 

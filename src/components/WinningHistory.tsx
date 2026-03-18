@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Search, Trophy, Users, Banknote, TrendingUp, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, RefreshCw, X } from 'lucide-react';
+import { Search, Trophy, Users, Banknote, TrendingUp, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, RefreshCw, Filter } from 'lucide-react';
 import { useLottoWinning, WinningDraw } from '../hooks/useLottoWinning';
 import { getLottoNumberColor } from '../utils/lottoGenerator';
 import { getCurrentLottoRound } from '../utils/lottoGenerator';
@@ -172,45 +172,6 @@ function FrequencyHeatmap({ draws }: { draws: WinningDraw[] }) {
   );
 }
 
-// 통계 요약 카드
-function StatsSummary({ draws }: { draws: WinningDraw[] }) {
-  const maxPrize = useMemo(
-    () => draws.reduce((max, d) => Math.max(max, d.firstWinamnt), 0),
-    [draws]
-  );
-  const maxPrizeDraw = useMemo(
-    () => draws.find((d) => d.firstWinamnt === maxPrize),
-    [draws, maxPrize]
-  );
-  const avgWinners = useMemo(
-    () =>
-      draws.length > 0
-        ? Math.round(draws.reduce((s, d) => s + d.firstPrzwnerCo, 0) / draws.length)
-        : 0,
-    [draws]
-  );
-  return (
-    <div className="grid grid-cols-2 gap-3">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
-        <div className="text-2xl mb-1">🏆</div>
-        <p className="text-xs text-gray-500 mb-1">최고 1등 당첨금</p>
-        <p className="text-base font-black text-amber-600">
-          {Math.round(maxPrize / 100000000).toLocaleString()}억
-        </p>
-        {maxPrizeDraw && (
-          <p className="text-[10px] text-gray-400 mt-0.5">{maxPrizeDraw.drwNo}회</p>
-        )}
-      </div>
-
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
-        <div className="text-2xl mb-1">👤</div>
-        <p className="text-xs text-gray-500 mb-1">평균 1등 당첨자</p>
-        <p className="text-base font-black text-emerald-600">{avgWinners}명</p>
-        <p className="text-[10px] text-gray-400 mt-0.5">최근 {draws.length}회</p>
-      </div>
-    </div>
-  );
-}
 
 export function WinningHistory() {
   const {
@@ -227,6 +188,7 @@ export function WinningHistory() {
 
   const [searchInput, setSearchInput] = useState('');
   const [page, setPage] = useState(1);
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const PAGE_SIZE = 10;
 
   useEffect(() => {
@@ -238,6 +200,11 @@ export function WinningHistory() {
     const n = parseInt(searchInput.trim());
     if (!n || n < 1) return;
     searchRound(n);
+  };
+
+  const handleClearSearch = () => {
+    clearSearch();
+    setSearchInput('');
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -346,59 +313,13 @@ export function WinningHistory() {
         </div>
       )}
 
-      {/* 회차 검색 */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5">
-        <h3 className="font-black text-gray-800 text-base mb-3 flex items-center gap-2">
-          <Search className="w-4 h-4 text-blue-500" />
-          회차 검색
-        </h3>
-        <div className="flex gap-2">
-          <input
-            type="number"
-            min={1}
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="조회할 회차를 입력하세요 (예: 1000)"
-            className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent"
-          />
-          <button
-            onClick={handleSearch}
-            disabled={searchLoading}
-            className="px-4 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl text-sm font-bold hover:shadow-md transition-all disabled:opacity-60 flex items-center gap-1.5"
-          >
-            {searchLoading ? (
-              <RefreshCw className="w-4 h-4 animate-spin" />
-            ) : (
-              <Search className="w-4 h-4" />
-            )}
-            검색
-          </button>
-        </div>
-
-        {/* 검색 결과 */}
-        {searchDraw && (
-          <div className="mt-3 relative">
-            <button
-              onClick={clearSearch}
-              className="absolute top-3 right-3 z-10 p-1 rounded-lg bg-white/80 hover:bg-gray-100 transition-colors"
-            >
-              <X className="w-4 h-4 text-gray-500" />
-            </button>
-            <DrawCard draw={searchDraw} highlight />
-          </div>
-        )}
-      </div>
-
-      {/* 통계 요약 */}
-      {draws.length > 0 && !loading && <StatsSummary draws={draws} />}
-
       {/* 번호 출현 빈도 */}
       {draws.length > 0 && !loading && <FrequencyHeatmap draws={draws} />}
 
-      {/* 당첨 기록 */}
+      {/* 당첨 기록 + 회차 검색 통합 */}
       {draws.length > 0 && !loading && (
         <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl shadow-lg p-4 sm:p-6">
+          {/* 헤더 */}
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-black text-gray-800 text-base sm:text-lg flex items-center gap-2">
               <Trophy className="w-5 h-5 text-amber-500" />
@@ -409,72 +330,158 @@ export function WinningHistory() {
             </h3>
           </div>
 
-          <div className="space-y-2.5">
-            {displayedDraws.map((draw, i) => (
-              <DrawCard key={draw.drwNo} draw={draw} highlight={page === 1 && i === 0} />
-            ))}
+          {/* 회차 검색 필터 */}
+          <div className="mb-4">
+            {/* 모바일: 토글 헤더 */}
+            <button
+              onClick={() => setIsFilterExpanded(!isFilterExpanded)}
+              className="lg:hidden w-full flex items-center justify-between p-3 bg-white rounded-xl hover:bg-gray-50 transition-colors touch-manipulation mb-2"
+            >
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-gray-600" />
+                <span className="text-sm font-medium text-gray-700">
+                  회차 검색
+                  {searchDraw && (
+                    <span className="ml-2 px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-semibold">
+                      {searchDraw.drwNo}회
+                    </span>
+                  )}
+                </span>
+              </div>
+              {isFilterExpanded ? (
+                <ChevronUp className="w-4 h-4 text-gray-600" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-gray-600" />
+              )}
+            </button>
+
+            {/* 데스크톱: 항상 표시 */}
+            <div className="hidden lg:flex items-center gap-2 mb-2">
+              <Filter className="w-4 h-4 text-gray-600" />
+              <label className="text-sm font-medium text-gray-700">회차 검색</label>
+            </div>
+
+            {/* 검색 입력 - 모바일: 접을 수 있음, 데스크톱: 항상 표시 */}
+            <div className={`space-y-2 ${isFilterExpanded ? 'block' : 'hidden'} lg:block`}>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="조회할 회차를 입력하세요 (예: 1000)"
+                  className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-700 placeholder:text-gray-400 focus:border-amber-400 focus:outline-none transition-colors"
+                />
+                <button
+                  onClick={handleSearch}
+                  disabled={searchLoading}
+                  className="px-4 py-2 sm:py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl text-sm font-bold hover:shadow-md transition-all disabled:opacity-60 flex items-center gap-1.5 whitespace-nowrap"
+                >
+                  {searchLoading ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Search className="w-4 h-4" />
+                  )}
+                  검색
+                </button>
+                {searchDraw && (
+                  <button
+                    onClick={handleClearSearch}
+                    className="px-3 py-2 sm:py-2.5 bg-gray-500 hover:bg-gray-600 text-white rounded-xl text-sm font-semibold transition-colors whitespace-nowrap"
+                  >
+                    전체
+                  </button>
+                )}
+              </div>
+
+              {/* 검색 결과 상태 표시 */}
+              {searchDraw && (
+                <div className="hidden lg:flex items-center gap-2">
+                  <span className="text-xs sm:text-sm text-gray-600">검색 결과:</span>
+                  <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs sm:text-sm font-semibold">
+                    제 {searchDraw.drwNo}회 ({searchDraw.drwNoDate})
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* 페이지네이션 */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-1.5 mt-5">
-              <button
-                onClick={() => setPage(1)}
-                disabled={page === 1}
-                className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="px-3 py-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm font-semibold"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-                .reduce<(number | '...')[]>((acc, p, idx, arr) => {
-                  if (idx > 0 && typeof arr[idx - 1] === 'number' && (p as number) - (arr[idx - 1] as number) > 1) {
-                    acc.push('...');
-                  }
-                  acc.push(p);
-                  return acc;
-                }, [])
-                .map((p, idx) =>
-                  p === '...' ? (
-                    <span key={`ellipsis-${idx}`} className="px-2 text-gray-400 text-sm">…</span>
-                  ) : (
-                    <button
-                      key={p}
-                      onClick={() => setPage(p as number)}
-                      className={`w-9 h-9 rounded-xl text-sm font-bold transition-all ${
-                        page === p
-                          ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md'
-                          : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  )
-                )}
-
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="px-3 py-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all text-sm font-semibold"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setPage(totalPages)}
-                disabled={page === totalPages}
-                className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-              >
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
+          {/* 검색 결과 또는 페이지네이션 목록 */}
+          {searchDraw ? (
+            <div className="space-y-2.5">
+              <DrawCard draw={searchDraw} highlight />
             </div>
+          ) : (
+            <>
+              <div className="space-y-2.5">
+                {displayedDraws.map((draw, i) => (
+                  <DrawCard key={draw.drwNo} draw={draw} highlight={page === 1 && i === 0} />
+                ))}
+              </div>
+
+              {/* 페이지네이션 */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-1.5 mt-5">
+                  <button
+                    onClick={() => setPage(1)}
+                    disabled={page === 1}
+                    className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                    .reduce<(number | '...')[]>((acc, p, idx, arr) => {
+                      if (idx > 0 && typeof arr[idx - 1] === 'number' && (p as number) - (arr[idx - 1] as number) > 1) {
+                        acc.push('...');
+                      }
+                      acc.push(p);
+                      return acc;
+                    }, [])
+                    .map((p, idx) =>
+                      p === '...' ? (
+                        <span key={`ellipsis-${idx}`} className="px-2 text-gray-400 text-sm">…</span>
+                      ) : (
+                        <button
+                          key={p}
+                          onClick={() => setPage(p as number)}
+                          className={`w-9 h-9 rounded-xl text-sm font-bold transition-all ${
+                            page === p
+                              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md'
+                              : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      )
+                    )}
+
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setPage(totalPages)}
+                    disabled={page === totalPages}
+                    className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
