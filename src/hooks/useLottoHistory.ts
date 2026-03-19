@@ -1,24 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { LottoNumber } from '../types';
 import { getCurrentLottoRound } from '../utils/lottoGenerator';
 
-const STORAGE_KEY = 'lotto_history';
-
 export function useLottoHistory() {
   const [history, setHistory] = useState<LottoNumber[]>([]);
-
-  // 로컬 스토리지에서 히스토리 로드
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setHistory(parsed);
-      } catch (error) {
-        console.error('Failed to parse lotto history:', error);
-      }
-    }
-  }, []);
 
   // 새 번호 추가
   const addEntry = (numbers: number[]) => {
@@ -30,31 +15,24 @@ export function useLottoHistory() {
       round: getCurrentLottoRound(), // 현재 회차 자동 계산
     };
 
-    const newHistory = [newEntry, ...history];
-    setHistory(newHistory);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newHistory));
+    setHistory((prev) => [newEntry, ...prev]);
   };
 
   // 특정 항목 삭제
   const deleteEntry = (id: string) => {
-    const newHistory = history.filter((entry) => entry.id !== id);
-    setHistory(newHistory);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newHistory));
+    setHistory((prev) => prev.filter((entry) => entry.id !== id));
   };
 
   // 전체 히스토리 삭제
   const clearHistory = () => {
     setHistory([]);
-    localStorage.removeItem(STORAGE_KEY);
   };
 
   // 항목 업데이트 (당첨 정보 추가 등)
   const updateEntry = (id: string, updates: Partial<LottoNumber>) => {
-    const newHistory = history.map((entry) =>
-      entry.id === id ? { ...entry, ...updates } : entry
+    setHistory((prev) =>
+      prev.map((entry) => (entry.id === id ? { ...entry, ...updates } : entry))
     );
-    setHistory(newHistory);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newHistory));
   };
 
   return {

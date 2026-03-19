@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { Search, Trophy, Users, Banknote, TrendingUp, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, RefreshCw, Filter } from 'lucide-react';
 import { useLottoWinning, WinningDraw } from '../hooks/useLottoWinning';
 import { getLottoNumberColor } from '../utils/lottoGenerator';
-import { getCurrentLottoRound } from '../utils/lottoGenerator';
+import { getLastDrawnLottoRound } from '../utils/lottoGenerator';
 
 function NumberBall({
   num,
@@ -192,7 +192,7 @@ export function WinningHistory() {
   const PAGE_SIZE = 10;
 
   useEffect(() => {
-    const currentRound = getCurrentLottoRound();
+    const currentRound = getLastDrawnLottoRound();
     loadRecent(currentRound, 20);
   }, [loadRecent]);
 

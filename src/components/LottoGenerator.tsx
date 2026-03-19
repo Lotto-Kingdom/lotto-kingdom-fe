@@ -62,14 +62,18 @@ export function LottoGenerator({ onGenerate }: LottoGeneratorProps) {
     setExcludedNumbers([]);
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
-      const numbers = generateLottoNumbers(selectedMode, fixedNumbers, excludedNumbers);
+    try {
+      const numbers = await generateLottoNumbers(selectedMode, fixedNumbers, excludedNumbers);
       setCurrentNumbers(numbers);
       onGenerate(numbers);
+    } catch (error) {
+      console.error(error);
+      alert(error instanceof Error ? error.message : '로또 번호 생성 중 오류가 발생했습니다.');
+    } finally {
       setIsGenerating(false);
-    }, 500);
+    }
   };
 
   const currentModeInfo = MODES.find((m) => m.id === selectedMode)!;

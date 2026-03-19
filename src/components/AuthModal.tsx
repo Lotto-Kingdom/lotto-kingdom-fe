@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { TermsOfService } from './TermsOfService';
 import { PrivacyPolicy } from './PrivacyPolicy';
 
-type Mode = 'login' | 'signup' | 'verify';
+type Mode = 'login' | 'signup' | 'verify' | 'success';
 
 interface Props {
   initialMode?: 'login' | 'signup';
@@ -47,7 +47,7 @@ function Field({
 
 // ── 메인 모달 ──────────────────────────────────────────────
 export function AuthModal({ initialMode = 'login', onClose }: Props) {
-  const { login, signup, verifyEmail } = useAuth();
+  const { login, signup, verifyEmail, sendVerificationEmail } = useAuth();
   const [mode, setMode] = useState<Mode>(initialMode);
 
   // 로그인
@@ -55,6 +55,7 @@ export function AuthModal({ initialMode = 'login', onClose }: Props) {
   const [loginPw, setLoginPw] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
+  const [autoLogin, setAutoLogin] = useState(false);
 
   // 회원가입
   const [signupNick, setSignupNick] = useState('');
@@ -72,6 +73,20 @@ export function AuthModal({ initialMode = 'login', onClose }: Props) {
   const [verifyError, setVerifyError] = useState('');
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [pendingEmail, setPendingEmail] = useState('');
+  const [timeLeft, setTimeLeft] = useState(300);
+
+  useEffect(() => {
+    if (mode === 'verify' && timeLeft > 0) {
+      const timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
+      return () => clearInterval(timer);
+    }
+  }, [mode, timeLeft]);
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
 
   // 코드 입력 6칸 ref
   const codeRefs = [
@@ -102,18 +117,13 @@ export function AuthModal({ initialMode = 'login', onClose }: Props) {
     }
   };
 
-  // 배경 클릭 닫기
-  const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) onClose();
-  };
-
   // ── 로그인 제출 ──────────────────────────────────────────
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
     if (!loginEmail || !loginPw) { setLoginError('이메일과 비밀번호를 입력해 주세요.'); return; }
     setLoginLoading(true);
-    const res = await login(loginEmail, loginPw);
+    const res = await login(loginEmail, loginPw, autoLogin);
     setLoginLoading(false);
     if (res.ok) { onClose(); } else { setLoginError(res.error ?? '로그인 실패'); }
   };
@@ -127,7 +137,9 @@ export function AuthModal({ initialMode = 'login', onClose }: Props) {
     if (!signupEmail) errs.email = '이메일을 입력해 주세요.';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(signupEmail)) errs.email = '올바른 이메일 형식이 아닙니다.';
     if (!signupPw) errs.pw = '비밀번호를 입력해 주세요.';
-    else if (signupPw.length < 6) errs.pw = '비밀번호는 6자 이상이어야 합니다.';
+    else if (!/^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%*#?&]).{8,20}$/.test(signupPw)) {
+      errs.pw = '8~20자, 영문/숫자/특수문자를 포함해야 합니다.';
+    }
     if (signupPw !== signupPwCf) errs.pwcf = '비밀번호가 일치하지 않습니다.';
     if (!agreeTerms) errs.terms = '이용약관에 동의해 주세요.';
     if (!agreePrivacy) errs.privacy = '개인정보 수집 및 이용에 동의해 주세요.';
@@ -135,30 +147,48 @@ export function AuthModal({ initialMode = 'login', onClose }: Props) {
     if (Object.keys(errs).length > 0) return;
 
     setSignupLoading(true);
-    const res = await signup(signupNick, signupEmail, signupPw);
+    const res = await sendVerificationEmail(signupEmail);
     setSignupLoading(false);
     if (res.ok) {
       setPendingEmail(signupEmail);
+      setTimeLeft(300);
       setMode('verify');
     } else {
-      setSignupErrors({ email: res.error ?? '회원가입 실패' });
+      setSignupErrors({ email: res.error ?? '인증 메일 발송 실패' });
     }
   };
 
   // ── 인증 코드 제출 ────────────────────────────────────────
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (timeLeft === 0) { setVerifyError('인증 시간이 만료되었습니다.'); return; }
     if (verifyCode.length < 6) { setVerifyError('6자리 코드를 모두 입력해 주세요.'); return; }
     setVerifyLoading(true);
-    const res = await verifyEmail(pendingEmail, verifyCode);
+    setVerifyError('');
+
+    const verifyRes = await verifyEmail(pendingEmail, verifyCode);
+    if (!verifyRes.ok) {
+      setVerifyError(verifyRes.error ?? '인증 실패');
+      setVerifyLoading(false);
+      return;
+    }
+
+    const signupRes = await signup(signupNick, pendingEmail, signupPw);
+    if (!signupRes.ok) {
+      setVerifyError(signupRes.error ?? '회원가입 실패');
+      setVerifyLoading(false);
+      return;
+    }
+
+    await login(pendingEmail, signupPw, false);
+    
     setVerifyLoading(false);
-    if (res.ok) { onClose(); } else { setVerifyError(res.error ?? '인증 실패'); }
+    setMode('success');
   };
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-      onClick={handleBackdrop}
     >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-slide-up">
 
@@ -166,12 +196,13 @@ export function AuthModal({ initialMode = 'login', onClose }: Props) {
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-5 flex items-center justify-between">
           <div>
             <h2 className="text-white font-black text-lg">
-              {mode === 'login' ? '로그인' : mode === 'signup' ? '회원가입' : '이메일 인증'}
+              {mode === 'login' ? '로그인' : mode === 'signup' ? '회원가입' : mode === 'success' ? '가입 완료' : '이메일 인증'}
             </h2>
             <p className="text-white/70 text-xs mt-0.5">
               {mode === 'login' ? '로또나라 계정으로 로그인하세요'
                 : mode === 'signup' ? '새 계정을 만들어보세요'
-                  : `${pendingEmail} 로 발송된 코드를 입력하세요`}
+                  : mode === 'success' ? '로또나라의 회원이 되신 것을 환영합니다!'
+                    : `${pendingEmail} 로 발송된 코드를 입력하세요`}
             </p>
           </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors">
@@ -180,7 +211,7 @@ export function AuthModal({ initialMode = 'login', onClose }: Props) {
         </div>
 
         {/* 탭 (로그인/회원가입) */}
-        {mode !== 'verify' && (
+        {mode !== 'verify' && mode !== 'success' && (
           <div className="flex border-b border-gray-100">
             {(['login', 'signup'] as const).map(m => (
               <button
@@ -206,6 +237,24 @@ export function AuthModal({ initialMode = 'login', onClose }: Props) {
                 placeholder="example@email.com" icon={Mail} />
               <Field label="비밀번호" type="password" value={loginPw} onChange={setLoginPw}
                 placeholder="비밀번호 입력" icon={Lock} />
+              
+              <div className="flex items-center">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <div className="relative flex items-center justify-center w-5 h-5">
+                    <input
+                      type="checkbox"
+                      className="peer sr-only"
+                      checked={autoLogin}
+                      onChange={(e) => setAutoLogin(e.target.checked)}
+                    />
+                    <div className="w-5 h-5 border-2 border-gray-300 rounded peer-checked:bg-blue-600 peer-checked:border-blue-600 transition-colors"></div>
+                    <CheckCircle className="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" />
+                  </div>
+                  <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors">
+                    자동 로그인
+                  </span>
+                </label>
+              </div>
               {loginError && (
                 <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2.5 text-red-600 text-xs">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />{loginError}
@@ -236,7 +285,7 @@ export function AuthModal({ initialMode = 'login', onClose }: Props) {
               <Field label="이메일" type="email" value={signupEmail} onChange={setSignupEmail}
                 placeholder="example@email.com" icon={Mail} error={signupErrors.email} />
               <Field label="비밀번호" type="password" value={signupPw} onChange={setSignupPw}
-                placeholder="6자 이상" icon={Lock} error={signupErrors.pw} />
+                placeholder="8~20자 영문/숫자/특수문자" icon={Lock} error={signupErrors.pw} />
               <Field label="비밀번호 확인" type="password" value={signupPwCf} onChange={setSignupPwCf}
                 placeholder="비밀번호 재입력" icon={Lock} error={signupErrors.pwcf} />
 
@@ -310,7 +359,9 @@ export function AuthModal({ initialMode = 'login', onClose }: Props) {
                 <p className="text-sm text-gray-600 leading-relaxed">
                   <span className="font-bold text-gray-800">{pendingEmail}</span><br />
                   으로 인증 코드를 발송했습니다.<br />
-                  <span className="text-xs text-gray-400">(Mock 모드: 코드는 <strong>123456</strong> 입니다)</span>
+                  <span className={`text-sm font-bold mt-2 inline-block ${timeLeft <= 60 ? 'text-red-500' : 'text-blue-600'}`}>
+                    남은 시간: {formatTime(timeLeft)}
+                  </span>
                 </p>
               </div>
 
@@ -340,7 +391,7 @@ export function AuthModal({ initialMode = 'login', onClose }: Props) {
 
               <button
                 type="submit"
-                disabled={verifyLoading || verifyCode.length < 6}
+                disabled={verifyLoading || verifyCode.length < 6 || timeLeft === 0}
                 className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl hover:opacity-90 active:scale-95 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
               >
                 {verifyLoading
@@ -349,6 +400,28 @@ export function AuthModal({ initialMode = 'login', onClose }: Props) {
                 }
               </button>
             </form>
+          )}
+
+          {/* ── 회원가입 성공 폼 ──────────────────────────── */}
+          {mode === 'success' && (
+            <div className="text-center space-y-6">
+              <div className="w-20 h-20 mx-auto bg-green-50 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-10 h-10 text-green-500" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-gray-900">가입이 완료되었습니다!</h3>
+                <p className="text-sm text-gray-500 mt-2">
+                  <span className="font-bold text-gray-800">{signupNick}</span>님, 환영합니다.<br />
+                  지금부터 로또나라의 모든 서비스를 이용하실 수 있습니다.
+                </p>
+              </div>
+              <button
+                onClick={onClose}
+                className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                시작하기
+              </button>
+            </div>
           )}
 
         </div>
