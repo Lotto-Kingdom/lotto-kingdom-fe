@@ -73,7 +73,7 @@ function DrawCard({ draw, highlight = false }: { draw: WinningDraw; highlight?: 
           <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
             <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg">
               <Users className="w-3 h-3" />
-              {draw.firstPrzwnerCo}명
+              1등 {draw.firstPrzwnerCo}명
             </span>
             <span className="text-xs font-black text-orange-600">
               {Math.round(draw.firstWinamnt / 100000000).toLocaleString()}억
@@ -260,7 +260,7 @@ export function WinningHistory() {
                   {Math.round(latestDraw.firstWinamnt / 100000000).toLocaleString()}억원
                 </p>
                 <p className="text-white/70 text-xs mt-1">
-                  당첨자 {latestDraw.firstPrzwnerCo}명
+                  1등 당첨자 {latestDraw.firstPrzwnerCo}명
                 </p>
               </div>
             </div>
