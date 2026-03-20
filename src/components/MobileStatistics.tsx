@@ -14,6 +14,7 @@ interface MobileStatisticsProps {
 
 export function MobileStatistics({ latestDraw, hotNumbers = [], coldNumbers = [] }: MobileStatisticsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const displayColdNumbers = coldNumbers.slice(0, 10);
 
   return (
     <div className="w-full lg:hidden">
@@ -145,12 +146,12 @@ export function MobileStatistics({ latestDraw, hotNumbers = [], coldNumbers = []
               </div>
 
               <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
-                {coldNumbers.length === 0 ? (
+                {displayColdNumbers.length === 0 ? (
                   <div className="col-span-5 flex justify-center py-4 text-gray-400">
                     <Loader2 className="w-5 h-5 animate-spin" />
                   </div>
                 ) : (
-                  coldNumbers.map(({ number: num, absentRounds }) => (
+                  displayColdNumbers.map(({ number: num, absentRounds }) => (
                     <div
                       key={`m-cold-${num}`}
                       className="flex flex-col items-center justify-center bg-gray-50 border border-gray-100 rounded-lg py-1.5"

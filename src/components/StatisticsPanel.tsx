@@ -12,6 +12,8 @@ interface StatisticsPanelProps {
 }
 
 export function StatisticsPanel({ latestDraw, hotNumbers = [], coldNumbers = [] }: StatisticsPanelProps) {
+  const displayColdNumbers = coldNumbers.slice(0, 10);
+
   return (
     <div className="space-y-4">
 
@@ -112,16 +114,16 @@ export function StatisticsPanel({ latestDraw, hotNumbers = [], coldNumbers = [] 
           <span className="text-[10px] text-blue-400 font-medium bg-blue-50 px-2 py-0.5 rounded-full">최근 10주 이상</span>
         </div>
 
-        <div className="flex gap-2.5 flex-wrap justify-center">
-          {coldNumbers.length === 0 ? (
-            <div className="flex justify-center items-center py-6 text-gray-400 w-full">
+        <div className="grid grid-cols-5 gap-2 sm:gap-2.5">
+          {displayColdNumbers.length === 0 ? (
+            <div className="col-span-5 flex justify-center py-6 text-gray-400">
               <Loader2 className="w-6 h-6 animate-spin" />
             </div>
           ) : (
-            coldNumbers.map(({ number: num, absentRounds }) => (
+            displayColdNumbers.map(({ number: num, absentRounds }) => (
               <div
                 key={`cold-${num}`}
-                className="flex flex-col items-center bg-gray-50 border border-gray-200 rounded-xl px-2 py-2 flex-1 min-w-[50px] transition-transform hover:-translate-y-1"
+                className="flex flex-col items-center justify-center bg-gray-50 border border-gray-200 rounded-xl py-2 transition-transform hover:-translate-y-1"
               >
                 <div className={`w-8 h-8 rounded-full ${getLottoNumberColor(num)} text-white font-bold text-xs flex items-center justify-center shadow-sm mb-1 opacity-70`}>
                   {num}
