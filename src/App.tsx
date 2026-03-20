@@ -14,11 +14,21 @@ import { ContactUs } from './components/ContactUs';
 import { TermsOfService } from './components/TermsOfService';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { useLottoHistory } from './hooks/useLottoHistory';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLottoWinning } from './hooks/useLottoWinning';
+import { useLottoStatistics } from './hooks/useLottoStatistics';
 
 function HomePage() {
   const { history, addEntry } = useLottoHistory();
   const [sessionCount, setSessionCount] = useState(0);
+
+  const { latestDraw, loadRecent } = useLottoWinning();
+  const { hotNumbers, coldNumbers, loadStatistics } = useLottoStatistics();
+
+  useEffect(() => {
+    loadRecent(0);
+    loadStatistics();
+  }, [loadRecent, loadStatistics]);
 
   const handleGenerate = (nums: number[]) => {
     addEntry(nums);
@@ -33,11 +43,11 @@ function HomePage() {
         <LottoGenerator onGenerate={handleGenerate} />
         {recentHistory.length > 0 && <MiniHistory history={recentHistory} />}
         <StoreFinder />
-        <MobileStatistics history={history} />
+        <MobileStatistics history={history} latestDraw={latestDraw} hotNumbers={hotNumbers} coldNumbers={coldNumbers} />
       </div>
       <aside className="hidden lg:block lg:col-span-4">
         <div className="sticky top-24">
-          <StatisticsPanel history={history} />
+          <StatisticsPanel history={history} latestDraw={latestDraw} hotNumbers={hotNumbers} coldNumbers={coldNumbers} />
         </div>
       </aside>
     </div>

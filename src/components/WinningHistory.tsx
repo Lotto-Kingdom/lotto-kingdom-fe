@@ -1,6 +1,7 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { Search, Trophy, Users, Banknote, TrendingUp, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, RefreshCw, Filter } from 'lucide-react';
 import { useLottoWinning, WinningDraw } from '../hooks/useLottoWinning';
+import { useLottoFullStatistics, NumberFrequency } from '../hooks/useLottoFullStatistics';
 import { getLottoNumberColor } from '../utils/lottoGenerator';
 
 function NumberBall({
@@ -113,40 +114,19 @@ function DrawCard({ draw, highlight = false }: { draw: WinningDraw; highlight?: 
 }
 
 // 번호별 출현 빈도
-function FrequencyHeatmap({ draws }: { draws: WinningDraw[] }) {
-  const frequency = useMemo(() => {
-    const freq: Record<number, number> = {};
-    for (let i = 1; i <= 45; i++) freq[i] = 0;
-    draws.forEach((d) => {
-      d.numbers.forEach((n) => (freq[n] = (freq[n] || 0) + 1));
-    });
-    return freq;
-  }, [draws]);
-
-  const top5 = useMemo(
-    () =>
-      Object.entries(frequency)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 5)
-        .map(([n]) => Number(n)),
-    [frequency]
-  );
-
-  const bottom5 = useMemo(
-    () =>
-      Object.entries(frequency)
-        .sort(([, a], [, b]) => a - b)
-        .slice(0, 5)
-        .map(([n]) => Number(n)),
-    [frequency]
-  );
+function FrequencyHeatmap({ hot, cold, analysisCount }: { hot: NumberFrequency[]; cold: NumberFrequency[]; analysisCount: number }) {
+  // 상위/하위 5개 가져오기
+  const top5 = hot.slice(0, 5).map(h => h.number);
+  const bottom5 = cold.slice(0, 5).map(c => c.number);
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5">
       <div className="flex items-center gap-2 mb-4">
         <TrendingUp className="w-5 h-5 text-blue-600" />
         <h3 className="font-black text-gray-800 text-base sm:text-lg">번호 출현 빈도</h3>
-        <span className="text-xs text-gray-400 font-medium">조회된 {draws.length}회차 통계</span>
+        <span className="text-xs text-blue-500 font-bold bg-blue-50 px-2 py-0.5 rounded-full mt-0.5">
+          {analysisCount === 0 ? '전체 (누적)' : `최근 ${analysisCount}회차`} 통계
+        </span>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -186,6 +166,8 @@ export function WinningHistory() {
     clearSearch,
   } = useLottoWinning();
 
+  const { data: statsData, loadStatistics: loadStats } = useLottoFullStatistics();
+
   const [searchInput, setSearchInput] = useState('');
   const [page, setPage] = useState(1);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
@@ -206,6 +188,10 @@ export function WinningHistory() {
       loadRecent(page - 1);
     }
   }, [loadRecent, page, searchDraw]);
+
+  useEffect(() => {
+    loadStats(20);
+  }, [loadStats]);
 
   const handleSearch = () => {
     const n = parseInt(searchInput.trim());
@@ -325,7 +311,14 @@ export function WinningHistory() {
       )}
 
       {/* 번호 출현 빈도 */}
-      {draws.length > 0 && !loading && <FrequencyHeatmap draws={draws} />}
+      {statsData ? (
+        <FrequencyHeatmap hot={statsData.hotNumbers} cold={statsData.coldNumbers} analysisCount={statsData.analysisCount} />
+      ) : (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center">
+          <RefreshCw className="w-6 h-6 text-blue-400 animate-spin mx-auto mb-2" />
+          <p className="text-gray-500 text-xs font-medium">통계 데이터를 불러오는 중...</p>
+        </div>
+      )}
 
       {/* 당첨 기록 + 회차 검색 통합 */}
       {draws.length > 0 && !loading && (

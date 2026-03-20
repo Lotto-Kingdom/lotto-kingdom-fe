@@ -1,8 +1,7 @@
-import { useMemo } from 'react';
-import { BarChart3, Flame, Snowflake, TrendingUp, Hash, Shuffle, Star } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { BarChart3, Flame, Snowflake, TrendingUp, Hash, Shuffle, Star, Loader2 } from 'lucide-react';
 import { getLottoNumberColor } from '../utils/lottoGenerator';
-
-import { RECENT_DRAWS, Draw } from '../utils/lottoData';
+import { useLottoFullStatistics, NumberFrequency, RangeDist, LottoStatisticsData } from '../hooks/useLottoFullStatistics';
 
 // ─────────────────────────────────────────────
 // 번호 공 컴포넌트
@@ -24,13 +23,8 @@ function Ball({ num, size = 'md', bonus = false, dim = false }: {
 // ─────────────────────────────────────────────
 // ① HOT / COLD 번호
 // ─────────────────────────────────────────────
-function HotCold({ freq }: { freq: Record<number, number> }) {
-  const sorted = Object.entries(freq)
-    .map(([n, c]) => ({ n: Number(n), c }))
-    .sort((a, b) => b.c - a.c);
-
-  const hot = sorted.slice(0, 5);
-  const cold = sorted.slice(-5).reverse();
+function HotCold({ hot, cold }: { hot: NumberFrequency[], cold: NumberFrequency[] }) {
+  const maxHot = hot.length > 0 ? hot[0].count : 1;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -42,7 +36,7 @@ function HotCold({ freq }: { freq: Record<number, number> }) {
           <span className="text-xs text-orange-500 font-bold">자주 나온</span>
         </div>
         <div className="space-y-2.5">
-          {hot.map(({ n, c }, idx) => (
+          {hot.map(({ number: n, count: c }, idx) => (
             <div key={n} className="flex items-center gap-3">
               <span className="text-sm font-black text-orange-300 w-4">{idx + 1}</span>
               <Ball num={n} size="sm" />
@@ -54,7 +48,7 @@ function HotCold({ freq }: { freq: Record<number, number> }) {
                 <div className="w-full h-1.5 bg-orange-100 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-orange-400 to-red-400 rounded-full"
-                    style={{ width: `${(c / hot[0].c) * 100}%` }}
+                    style={{ width: `${(c / maxHot) * 100}%` }}
                   />
                 </div>
               </div>
@@ -71,7 +65,7 @@ function HotCold({ freq }: { freq: Record<number, number> }) {
           <span className="text-xs text-blue-500 font-bold">적게 나온</span>
         </div>
         <div className="space-y-2.5">
-          {cold.map(({ n, c }, idx) => (
+          {cold.map(({ number: n, count: c }, idx) => (
             <div key={n} className="flex items-center gap-3">
               <span className="text-sm font-black text-blue-300 w-4">{idx + 1}</span>
               <Ball num={n} size="sm" />
@@ -83,7 +77,8 @@ function HotCold({ freq }: { freq: Record<number, number> }) {
                 <div className="w-full h-1.5 bg-blue-100 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full"
-                    style={{ width: `${((c + 1) / (hot[0].c)) * 100}%` }}
+                    // COLD 바 차트는 적을수록 비중을 작게 그리는 방식이거나 상대적인 값 사용
+                    style={{ width: `${((c + 1) / (maxHot || 1)) * 100}%` }}
                   />
                 </div>
               </div>
@@ -98,29 +93,23 @@ function HotCold({ freq }: { freq: Record<number, number> }) {
 // ─────────────────────────────────────────────
 // ③ 구간별(색상대별) 분포
 // ─────────────────────────────────────────────
-const ZONES = [
-  { label: '1~10', range: [1, 10], color: 'bg-yellow-400', text: 'text-yellow-700', bg: 'bg-yellow-50', border: 'border-yellow-200' },
-  { label: '11~20', range: [11, 20], color: 'bg-blue-400', text: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' },
-  { label: '21~30', range: [21, 30], color: 'bg-red-400', text: 'text-red-700', bg: 'bg-red-50', border: 'border-red-200' },
-  { label: '31~40', range: [31, 40], color: 'bg-gray-400', text: 'text-gray-700', bg: 'bg-gray-50', border: 'border-gray-200' },
-  { label: '41~45', range: [41, 45], color: 'bg-green-400', text: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200' },
+const ZONES_DEF = [
+  { label: '1~10', color: 'bg-yellow-400', text: 'text-yellow-700', bg: 'bg-yellow-50', border: 'border-yellow-200' },
+  { label: '11~20', color: 'bg-blue-400', text: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' },
+  { label: '21~30', color: 'bg-red-400', text: 'text-red-700', bg: 'bg-red-50', border: 'border-red-200' },
+  { label: '31~40', color: 'bg-gray-400', text: 'text-gray-700', bg: 'bg-gray-50', border: 'border-gray-200' },
+  { label: '41~45', color: 'bg-green-400', text: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200' },
 ];
 
-function ZoneDistribution({ draws }: { draws: Draw[] }) {
-  const zoneCounts = useMemo(() => {
-    return ZONES.map((z) => {
-      let count = 0;
-      draws.forEach((d) => {
-        d.numbers.forEach((n) => {
-          if (n >= z.range[0] && n <= z.range[1]) count++;
-        });
-      });
-      return { ...z, count };
-    });
-  }, [draws]);
+function ZoneDistribution({ rangeDist }: { rangeDist: RangeDist[] }) {
+  const total = rangeDist.reduce((s, z) => s + z.count, 0);
+  const maxCount = Math.max(...rangeDist.map((z) => z.count), 1);
 
-  const total = zoneCounts.reduce((s, z) => s + z.count, 0);
-  const maxCount = Math.max(...zoneCounts.map((z) => z.count));
+  // API의 rangeDistribution 범위(range) 값을 기반으로 ZONES_DEF와 매칭
+  const zoneCounts = rangeDist.map(z => {
+    const def = ZONES_DEF.find(d => d.label === z.range) || ZONES_DEF[0];
+    return { ...def, count: z.count, label: z.range };
+  });
 
   return (
     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-4 sm:p-6">
@@ -171,24 +160,9 @@ function ZoneDistribution({ draws }: { draws: Draw[] }) {
 // ─────────────────────────────────────────────
 // ④ 홀수/짝수 분석
 // ─────────────────────────────────────────────
-function OddEvenAnalysis({ draws }: { draws: Draw[] }) {
-  const stats = useMemo(() => {
-    let odd = 0, even = 0;
-    const patterns: Record<string, number> = {};
-    draws.forEach((d) => {
-      const o = d.numbers.filter((n) => n % 2 !== 0).length;
-      const e = 6 - o;
-      odd += o;
-      even += e;
-      const key = `홀${o}짝${e}`;
-      patterns[key] = (patterns[key] ?? 0) + 1;
-    });
-    const topPattern = Object.entries(patterns).sort((a, b) => b[1] - a[1]).slice(0, 3);
-    return { odd, even, total: odd + even, topPattern };
-  }, [draws]);
-
-  const oddPct = Math.round((stats.odd / stats.total) * 100);
-  const evenPct = 100 - oddPct;
+function OddEvenAnalysis({ data }: { data: LottoStatisticsData }) {
+  const oddPct = Math.round(data.oddPercentage);
+  const evenPct = Math.round(data.evenPercentage);
 
   return (
     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-4 sm:p-6">
@@ -215,14 +189,14 @@ function OddEvenAnalysis({ draws }: { draws: Draw[] }) {
 
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="bg-violet-50 rounded-2xl p-3.5 text-center border border-violet-100">
-          <p className="text-2xl font-black text-violet-700">{stats.odd}</p>
+          <p className="text-2xl font-black text-violet-700">{data.oddCount}</p>
           <p className="text-xs text-violet-500 font-semibold mt-0.5">홀수 출현</p>
-          <p className="text-[10px] text-gray-400">평균 {(stats.odd / draws.length).toFixed(1)}개/회</p>
+          <p className="text-[10px] text-gray-400">평균 {data.avgOddPerRound.toFixed(1)}개/회</p>
         </div>
         <div className="bg-pink-50 rounded-2xl p-3.5 text-center border border-pink-100">
-          <p className="text-2xl font-black text-pink-700">{stats.even}</p>
+          <p className="text-2xl font-black text-pink-700">{data.evenCount}</p>
           <p className="text-xs text-pink-500 font-semibold mt-0.5">짝수 출현</p>
-          <p className="text-[10px] text-gray-400">평균 {(stats.even / draws.length).toFixed(1)}개/회</p>
+          <p className="text-[10px] text-gray-400">평균 {data.avgEvenPerRound.toFixed(1)}개/회</p>
         </div>
       </div>
 
@@ -230,10 +204,10 @@ function OddEvenAnalysis({ draws }: { draws: Draw[] }) {
       <div>
         <p className="text-xs font-bold text-gray-500 mb-2">자주 나온 홀짝 조합</p>
         <div className="flex gap-2 flex-wrap">
-          {stats.topPattern.map(([key, cnt]) => (
-            <div key={key} className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-1.5">
-              <span className="text-sm font-black text-indigo-700">{key}</span>
-              <span className="text-xs text-indigo-400 font-bold">{cnt}회</span>
+          {data.oddEvenCombinations.map(({ pattern, count }) => (
+            <div key={pattern} className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-1.5">
+              <span className="text-sm font-black text-indigo-700">{pattern}</span>
+              <span className="text-xs text-indigo-400 font-bold">{count}회</span>
             </div>
           ))}
         </div>
@@ -245,30 +219,8 @@ function OddEvenAnalysis({ draws }: { draws: Draw[] }) {
 // ─────────────────────────────────────────────
 // ⑤ 번호 합계 분포
 // ─────────────────────────────────────────────
-function SumDistribution({ draws }: { draws: Draw[] }) {
-  const buckets = useMemo(() => {
-    const ranges = [
-      { label: '~100', min: 0, max: 100 },
-      { label: '101~120', min: 101, max: 120 },
-      { label: '121~140', min: 121, max: 140 },
-      { label: '141~160', min: 141, max: 160 },
-      { label: '161~180', min: 161, max: 180 },
-      { label: '181~', min: 181, max: 999 },
-    ];
-    return ranges.map((r) => ({
-      ...r,
-      count: draws.filter((d) => {
-        const s = d.numbers.reduce((a, b) => a + b, 0);
-        return s >= r.min && s <= r.max;
-      }).length,
-    }));
-  }, [draws]);
-
-  const sums = draws.map((d) => d.numbers.reduce((a, b) => a + b, 0));
-  const avg = Math.round(sums.reduce((a, b) => a + b, 0) / sums.length);
-  const minSum = Math.min(...sums);
-  const maxSum = Math.max(...sums);
-  const maxCount = Math.max(...buckets.map((b) => b.count));
+function SumDistribution({ data }: { data: LottoStatisticsData }) {
+  const maxCount = Math.max(...data.sumDistribution.map((b) => b.count), 1);
 
   return (
     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-4 sm:p-6">
@@ -279,25 +231,25 @@ function SumDistribution({ draws }: { draws: Draw[] }) {
 
       <div className="grid grid-cols-3 gap-2 mb-5">
         <div className="bg-teal-50 rounded-2xl p-3 text-center border border-teal-100">
-          <p className="text-xl font-black text-teal-700">{avg}</p>
+          <p className="text-xl font-black text-teal-700">{data.avgSum}</p>
           <p className="text-[10px] text-teal-500 font-semibold">평균 합계</p>
         </div>
         <div className="bg-blue-50 rounded-2xl p-3 text-center border border-blue-100">
-          <p className="text-xl font-black text-blue-700">{minSum}</p>
+          <p className="text-xl font-black text-blue-700">{data.minSum}</p>
           <p className="text-[10px] text-blue-500 font-semibold">최소 합계</p>
         </div>
         <div className="bg-orange-50 rounded-2xl p-3 text-center border border-orange-100">
-          <p className="text-xl font-black text-orange-700">{maxSum}</p>
+          <p className="text-xl font-black text-orange-700">{data.maxSum}</p>
           <p className="text-[10px] text-orange-500 font-semibold">최대 합계</p>
         </div>
       </div>
 
       {/* 막대 차트 */}
       <div className="flex items-end gap-2 h-28">
-        {buckets.map((b) => {
+        {data.sumDistribution.map((b) => {
           const pct = maxCount > 0 ? (b.count / maxCount) * 100 : 0;
           return (
-            <div key={b.label} className="flex-1 flex flex-col items-center gap-1 group">
+            <div key={b.range} className="flex-1 flex flex-col items-center gap-1 group">
               <span className="text-xs font-black text-teal-600 opacity-0 group-hover:opacity-100 transition-opacity">
                 {b.count}회
               </span>
@@ -307,7 +259,7 @@ function SumDistribution({ draws }: { draws: Draw[] }) {
                   style={{ height: `${Math.max(pct, 4)}%` }}
                 />
               </div>
-              <span className="text-[9px] text-gray-400 font-medium text-center leading-tight">{b.label}</span>
+              <span className="text-[9px] text-gray-400 font-medium text-center leading-tight">{b.range.replace('~', '~\n')}</span>
             </div>
           );
         })}
@@ -319,18 +271,9 @@ function SumDistribution({ draws }: { draws: Draw[] }) {
 // ─────────────────────────────────────────────
 // ⑥ 보너스 번호 분석
 // ─────────────────────────────────────────────
-function BonusAnalysis({ draws }: { draws: Draw[] }) {
-  const bonusFreq = useMemo(() => {
-    const freq: Record<number, number> = {};
-    draws.forEach((d) => {
-      freq[d.bonusNo] = (freq[d.bonusNo] ?? 0) + 1;
-    });
-    return Object.entries(freq)
-      .map(([n, c]) => ({ n: Number(n), c }))
-      .sort((a, b) => b.c - a.c);
-  }, [draws]);
-
-  const top5 = bonusFreq.slice(0, 5);
+function BonusAnalysis({ bonuses }: { bonuses: NumberFrequency[] }) {
+  const top5 = bonuses.slice(0, 5);
+  const maxCount = top5.length > 0 ? top5[0].count : 1;
 
   return (
     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-4 sm:p-6">
@@ -340,7 +283,7 @@ function BonusAnalysis({ draws }: { draws: Draw[] }) {
         <span className="text-xs text-gray-400 font-medium">TOP 5</span>
       </div>
       <div className="space-y-3">
-        {top5.map(({ n, c }, idx) => (
+        {top5.map(({ number: n, count: c }, idx) => (
           <div key={n} className="flex items-center gap-3">
             <span className="text-sm font-black text-gray-300 w-4">{idx + 1}</span>
             <Ball num={n} size="sm" bonus />
@@ -352,7 +295,7 @@ function BonusAnalysis({ draws }: { draws: Draw[] }) {
               <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-gray-400 to-slate-500 rounded-full"
-                  style={{ width: `${(c / top5[0].c) * 100}%` }}
+                  style={{ width: `${(c / maxCount) * 100}%` }}
                 />
               </div>
             </div>
@@ -366,33 +309,17 @@ function BonusAnalysis({ draws }: { draws: Draw[] }) {
 // ─────────────────────────────────────────────
 // ⑦ 연속 번호 패턴
 // ─────────────────────────────────────────────
-function ConsecutivePattern({ draws }: { draws: Draw[] }) {
-  const stats = useMemo(() => {
-    let hasConsec = 0;
-    let totalConsecPairs = 0;
-    const consecCounts: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0 };
-
-    draws.forEach((d) => {
-      const sorted = [...d.numbers].sort((a, b) => a - b);
-      let pairs = 0;
-      for (let i = 0; i < sorted.length - 1; i++) {
-        if (sorted[i + 1] - sorted[i] === 1) pairs++;
-      }
-      if (pairs > 0) hasConsec++;
-      totalConsecPairs += pairs;
-      const key = Math.min(pairs, 3);
-      consecCounts[key] = (consecCounts[key] ?? 0) + 1;
-    });
-
-    return { hasConsec, totalConsecPairs, consecCounts, pct: Math.round((hasConsec / draws.length) * 100) };
-  }, [draws]);
-
+function ConsecutivePattern({ data }: { data: LottoStatisticsData }) {
+  
+  const patternStats = data.consecutivePatterns;
   const items = [
-    { label: '연속 없음', count: stats.consecCounts[0] ?? 0, color: 'bg-gray-200', text: 'text-gray-600' },
-    { label: '1쌍 연속', count: stats.consecCounts[1] ?? 0, color: 'bg-blue-400', text: 'text-blue-700' },
-    { label: '2쌍 연속', count: stats.consecCounts[2] ?? 0, color: 'bg-purple-400', text: 'text-purple-700' },
-    { label: '3쌍 이상', count: stats.consecCounts[3] ?? 0, color: 'bg-pink-400', text: 'text-pink-700' },
+    { label: '연속 없음', count: patternStats.noneCount, color: 'bg-gray-200', text: 'text-gray-600' },
+    { label: '1쌍 연속', count: patternStats.oneCount, color: 'bg-blue-400', text: 'text-blue-700' },
+    { label: '2쌍 연속', count: patternStats.twoCount, color: 'bg-purple-400', text: 'text-purple-700' },
+    { label: '3쌍 이상', count: patternStats.threeOrMoreCount, color: 'bg-pink-400', text: 'text-pink-700' },
   ];
+  
+  const total = items.reduce((a, b) => a + b.count, 0) || 1;
 
   return (
     <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-4 sm:p-6">
@@ -403,11 +330,11 @@ function ConsecutivePattern({ draws }: { draws: Draw[] }) {
 
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="bg-purple-50 rounded-2xl p-3.5 text-center border border-purple-100">
-          <p className="text-2xl font-black text-purple-700">{stats.pct}%</p>
+          <p className="text-2xl font-black text-purple-700">{data.consecutiveRate.toFixed(1)}%</p>
           <p className="text-[10px] text-purple-500 font-semibold">연속 번호 포함률</p>
         </div>
         <div className="bg-pink-50 rounded-2xl p-3.5 text-center border border-pink-100">
-          <p className="text-2xl font-black text-pink-700">{(stats.totalConsecPairs / draws.length).toFixed(1)}</p>
+          <p className="text-2xl font-black text-pink-700">{data.avgConsecutiveCount.toFixed(2)}</p>
           <p className="text-[10px] text-pink-500 font-semibold">평균 연속 쌍 수</p>
         </div>
       </div>
@@ -419,7 +346,7 @@ function ConsecutivePattern({ draws }: { draws: Draw[] }) {
             <div
               key={item.label}
               className={`${item.color}`}
-              style={{ width: `${(item.count / draws.length) * 100}%` }}
+              style={{ width: `${(item.count / total) * 100}%` }}
             />
           ) : null
         )}
@@ -432,7 +359,7 @@ function ConsecutivePattern({ draws }: { draws: Draw[] }) {
             <span className="text-sm text-gray-600 flex-1">{item.label}</span>
             <span className={`text-sm font-black ${item.text}`}>{item.count}회</span>
             <span className="text-xs text-gray-400 w-10 text-right">
-              {Math.round((item.count / draws.length) * 100)}%
+              {Math.round((item.count / total) * 100)}%
             </span>
           </div>
         ))}
@@ -445,26 +372,49 @@ function ConsecutivePattern({ draws }: { draws: Draw[] }) {
 // 메인 컴포넌트
 // ─────────────────────────────────────────────
 export function WinningStats() {
-  const draws = RECENT_DRAWS;
+  const { data, loading, error, loadStatistics } = useLottoFullStatistics();
+  const [selectedCount, setSelectedCount] = useState<number>(20);
 
-  const freq = useMemo(() => {
-    const f: Record<number, number> = {};
-    for (let i = 1; i <= 45; i++) f[i] = 0;
-    draws.forEach((d) => d.numbers.forEach((n) => { f[n]++; }));
-    return f;
-  }, [draws]);
+  useEffect(() => {
+    loadStatistics(selectedCount);
+  }, [loadStatistics, selectedCount]);
 
-  const topNum = Object.entries(freq).sort((a, b) => Number(b[1]) - Number(a[1]))[0];
-  const coldNum = Object.entries(freq).sort((a, b) => Number(a[1]) - Number(b[1]))[0];
-  const totalNums = Object.values(freq).reduce((a, b) => a + b, 0);
+  if (loading || !data) {
+    return (
+      <div className="w-full flex-1 flex flex-col items-center justify-center min-h-[500px] text-indigo-500 space-y-4">
+        <Loader2 className="w-10 h-10 animate-spin" />
+        <p className="text-sm font-bold animate-pulse">통계 데이터를 분석하고 있습니다...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full flex-1 flex items-center justify-center min-h-[500px] text-red-500 text-sm font-bold">
+        {error}
+      </div>
+    );
+  }
 
   return (
     <div className="w-full space-y-4 sm:space-y-6">
 
       {/* 페이지 헤더 */}
-      <div className="flex items-center gap-2">
-        <BarChart3 className="w-6 h-6 text-indigo-500" />
-        <h2 className="text-xl sm:text-2xl font-black text-gray-800">통계</h2>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="w-6 h-6 text-indigo-500" />
+          <h2 className="text-xl sm:text-2xl font-black text-gray-800">통계</h2>
+        </div>
+        <select
+          value={selectedCount}
+          onChange={(e) => setSelectedCount(Number(e.target.value))}
+          className="text-xs sm:text-sm font-bold border-gray-200 text-indigo-700 bg-indigo-50/50 rounded-xl px-3 py-1.5 focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+        >
+          <option value={20}>최근 20회차</option>
+          <option value={50}>최근 50회차</option>
+          <option value={100}>최근 100회차</option>
+          <option value={0}>역대 전체 (누적)</option>
+        </select>
       </div>
 
       {/* 히어로 배너 */}
@@ -473,58 +423,62 @@ export function WinningStats() {
         <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/10 rounded-full translate-y-1/3 -translate-x-1/3" />
         <div className="relative z-10">
           <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm text-white text-xs font-bold rounded-full mb-3">
-            당첨 번호 분석 · 최근 {draws.length}회차
+            당첨 번호 분석 · {data.analysisCount === 0 ? '전체 (누적)' : `최근 ${data.analysisCount}회차`}
           </span>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6">
             <div>
-              <p className="text-white/70 text-xs mb-1">분석 회차</p>
-              <p className="text-white font-black text-2xl sm:text-3xl">{draws.length}회</p>
-              <p className="text-white/60 text-[10px] mt-0.5">{draws[draws.length - 1].drwNo}~{draws[0].drwNo}회</p>
+              <p className="text-white/70 text-xs mb-1">분석 회차 수</p>
+              <p className="text-white font-black text-2xl sm:text-3xl">{data.analysisCount === 0 ? '전체' : `${data.analysisCount}회`}</p>
+              <p className="text-white/60 text-[10px] mt-0.5">
+                {data.startRound}~{data.baseRound}회 기준
+              </p>
             </div>
             <div>
               <p className="text-white/70 text-xs mb-1">총 추출 번호</p>
-              <p className="text-white font-black text-2xl sm:text-3xl">{totalNums}</p>
-              <p className="text-white/60 text-[10px] mt-0.5">6개 × {draws.length}회</p>
+              <p className="text-white font-black text-2xl sm:text-3xl">{data.totalNumbers}</p>
+              <p className="text-white/60 text-[10px] mt-0.5">분석 대상 총 번호 수</p>
             </div>
             <div>
               <p className="text-white/70 text-xs mb-1">🔥 최다 출현</p>
-              <p className="text-white font-black text-2xl sm:text-3xl">{topNum[0]}번</p>
-              <p className="text-white/60 text-[10px] mt-0.5">{topNum[1]}회 출현</p>
+              <p className="text-white font-black text-2xl sm:text-3xl">{data.maxFrequencyNumber}번</p>
+              <p className="text-white/60 text-[10px] mt-0.5">{data.maxFrequency}회 출현</p>
             </div>
             <div>
               <p className="text-white/70 text-xs mb-1">❄️ 최소 출현</p>
-              <p className="text-white font-black text-2xl sm:text-3xl">{coldNum[0]}번</p>
-              <p className="text-white/60 text-[10px] mt-0.5">{coldNum[1]}회 출현</p>
+              <p className="text-white font-black text-2xl sm:text-3xl">{data.minFrequencyNumber}번</p>
+              <p className="text-white/60 text-[10px] mt-0.5">{data.minFrequency}회 출현</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* HOT / COLD */}
-      <HotCold freq={freq} />
+      <HotCold hot={data.hotNumbers} cold={data.coldNumbers} />
 
       {/* 구간별 분포 + 홀짝 분석 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <ZoneDistribution draws={draws} />
-        <OddEvenAnalysis draws={draws} />
+        <ZoneDistribution rangeDist={data.rangeDistribution} />
+        <OddEvenAnalysis data={data} />
       </div>
 
       {/* 번호 합계 + 연속 번호 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <SumDistribution draws={draws} />
-        <ConsecutivePattern draws={draws} />
+        <SumDistribution data={data} />
+        <ConsecutivePattern data={data} />
       </div>
 
       {/* 보너스 번호 */}
-      <BonusAnalysis draws={draws} />
+      <BonusAnalysis bonuses={data.bonusNumberFrequencies} />
 
       {/* 안내 */}
       <div className="bg-indigo-50 rounded-2xl p-4 text-center">
         <p className="text-xs text-indigo-600 font-medium">
-          최근 {draws.length}회차 당첨 번호를 기반으로 분석한 통계입니다.
+          {data.analysisCount === 0 
+            ? '역대 전체 회차 당첨 번호를 기반으로 분석한 누적 통계입니다.' 
+            : `최근 ${data.analysisCount}회차 당첨 번호를 기반으로 계산된 실시간 분석 통계입니다.`}
         </p>
         <p className="text-xs text-indigo-400 mt-1">
-          로또는 매 회차 독립적인 확률로 추첨됩니다. 본 통계는 참고용입니다.
+          로또는 매 회차 독립적인 확률로 추첨됩니다. 본 통계는 참고용으로만 사용해 주세요.
         </p>
       </div>
     </div>
