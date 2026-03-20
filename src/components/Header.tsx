@@ -34,7 +34,7 @@ export function Header() {
       path: '/stats',
     },
     {
-      label: '판매점 찾기',
+      label: '당첨 판매점 찾기',
       icon: MapPin,
       path: '/store/nearby',
     },

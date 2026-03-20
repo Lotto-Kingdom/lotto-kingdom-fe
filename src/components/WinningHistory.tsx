@@ -2,7 +2,6 @@ import { useEffect, useState, useMemo } from 'react';
 import { Search, Trophy, Users, Banknote, TrendingUp, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, RefreshCw, Filter } from 'lucide-react';
 import { useLottoWinning, WinningDraw } from '../hooks/useLottoWinning';
 import { getLottoNumberColor } from '../utils/lottoGenerator';
-import { getLastDrawnLottoRound } from '../utils/lottoGenerator';
 
 function NumberBall({
   num,
@@ -147,7 +146,7 @@ function FrequencyHeatmap({ draws }: { draws: WinningDraw[] }) {
       <div className="flex items-center gap-2 mb-4">
         <TrendingUp className="w-5 h-5 text-blue-600" />
         <h3 className="font-black text-gray-800 text-base sm:text-lg">번호 출현 빈도</h3>
-        <span className="text-xs text-gray-400 font-medium">최근 {draws.length}회차</span>
+        <span className="text-xs text-gray-400 font-medium">조회된 {draws.length}회차 통계</span>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -181,6 +180,7 @@ export function WinningHistory() {
     loading,
     searchLoading,
     error,
+    totalPages: apiTotalPages,
     loadRecent,
     searchRound,
     clearSearch,
@@ -189,12 +189,23 @@ export function WinningHistory() {
   const [searchInput, setSearchInput] = useState('');
   const [page, setPage] = useState(1);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
-  const PAGE_SIZE = 10;
 
+  const getPageRange = (current: number, total: number, showCount: number) => {
+    let start = Math.max(1, current - Math.floor(showCount / 2));
+    let end = start + showCount - 1;
+    if (end > total) {
+      end = total;
+      start = Math.max(1, end - showCount + 1);
+    }
+    return Array.from({ length: Math.max(1, end - start + 1) }, (_, i) => start + i);
+  };
+
+  // 백엔드의 페이지는 0-indexed이므로 -1 해서 전달
   useEffect(() => {
-    const currentRound = getLastDrawnLottoRound();
-    loadRecent(currentRound, 20);
-  }, [loadRecent]);
+    if (!searchDraw) {
+      loadRecent(page - 1);
+    }
+  }, [loadRecent, page, searchDraw]);
 
   const handleSearch = () => {
     const n = parseInt(searchInput.trim());
@@ -211,8 +222,8 @@ export function WinningHistory() {
     if (e.key === 'Enter') handleSearch();
   };
 
-  const totalPages = Math.ceil(draws.length / PAGE_SIZE);
-  const displayedDraws = draws.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = apiTotalPages;
+  const displayedDraws = draws;
 
   return (
     <div className="w-full space-y-4 sm:space-y-6">
@@ -324,9 +335,6 @@ export function WinningHistory() {
             <h3 className="font-black text-gray-800 text-base sm:text-lg flex items-center gap-2">
               <Trophy className="w-5 h-5 text-amber-500" />
               당첨 기록
-              <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">
-                {draws.length}회
-              </span>
             </h3>
           </div>
 
@@ -438,32 +446,39 @@ export function WinningHistory() {
                     <ChevronLeft className="w-4 h-4" />
                   </button>
 
-                  {Array.from({ length: totalPages }, (_, i) => i + 1)
-                    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-                    .reduce<(number | '...')[]>((acc, p, idx, arr) => {
-                      if (idx > 0 && typeof arr[idx - 1] === 'number' && (p as number) - (arr[idx - 1] as number) > 1) {
-                        acc.push('...');
-                      }
-                      acc.push(p);
-                      return acc;
-                    }, [])
-                    .map((p, idx) =>
-                      p === '...' ? (
-                        <span key={`ellipsis-${idx}`} className="px-2 text-gray-400 text-sm">…</span>
-                      ) : (
-                        <button
-                          key={p}
-                          onClick={() => setPage(p as number)}
-                          className={`w-9 h-9 rounded-xl text-sm font-bold transition-all ${
-                            page === p
-                              ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md'
-                              : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-                          }`}
-                        >
-                          {p}
-                        </button>
-                      )
-                    )}
+                  {/* 모바일 뷰 (5개) */}
+                  <div className="flex sm:hidden items-center gap-1">
+                    {getPageRange(page, totalPages, 5).map((p) => (
+                      <button
+                        key={`m-${p}`}
+                        onClick={() => setPage(p)}
+                        className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
+                          page === p
+                            ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md'
+                            : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* 데스크톱 뷰 (10개) */}
+                  <div className="hidden sm:flex items-center gap-1.5">
+                    {getPageRange(page, totalPages, 10).map((p) => (
+                      <button
+                        key={`d-${p}`}
+                        onClick={() => setPage(p)}
+                        className={`w-9 h-9 rounded-xl text-sm font-bold transition-all ${
+                          page === p
+                            ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md'
+                            : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
 
                   <button
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}

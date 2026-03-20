@@ -38,7 +38,7 @@ export function StoreFinder() {
                 <div className="w-full sm:w-auto flex-shrink-0">
                     <div className="w-full sm:w-auto px-6 py-3.5 bg-white text-green-600 hover:bg-green-50 active:bg-gray-100 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-sm group-hover:shadow-md">
                         <Navigation className="w-5 h-5" />
-                        내 주변 판매점 찾기
+                        내 주변 당첨 판매점 찾기
                     </div>
                 </div>
             </div>

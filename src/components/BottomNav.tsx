@@ -26,7 +26,7 @@ const NAV_ITEMS = [
     match: (p: string) => p === '/stats',
   },
   {
-    label: '판매점',
+    label: '당첨 판매점',
     icon: MapPin,
     path: '/store/nearby',
     match: (p: string) => p === '/store/nearby',
