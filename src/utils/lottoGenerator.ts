@@ -1,6 +1,6 @@
 export type GenerationMode = 'hot' | 'cold' | 'balanced' | 'random' | 'ai';
 
-const API_BASE_URL = 'http://localhost:8080';
+import { API_BASE_URL } from '../config/api';
 
 /**
  * 1-45 사이의 중복되지 않는 6개의 로또 번호와 1개의 보너스 번호를 생성합니다.
