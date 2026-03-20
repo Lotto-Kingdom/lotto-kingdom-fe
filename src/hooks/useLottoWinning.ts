@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 
 export interface WinningDraw {
   drwNo: number;
@@ -23,7 +23,17 @@ export function useLottoWinning() {
   const [latestRound, setLatestRound] = useState<number | null>(null);
   const [totalPages, setTotalPages] = useState(1);
 
+  // 진행 중인 API 요청을 추적하고 취소하기 위한 참조
+  const fetchAbortController = useRef<AbortController | null>(null);
+
   const loadRecent = useCallback(async (page: number = 0) => {
+    // 기존 요청이 있다면 취소하여 중복 호출 방지 (Strict Mode 등 대응)
+    if (fetchAbortController.current) {
+      fetchAbortController.current.abort();
+    }
+    const controller = new AbortController();
+    fetchAbortController.current = controller;
+
     setLoading(true);
     setError(null);
     try {
@@ -31,7 +41,8 @@ export function useLottoWinning() {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
-        }
+        },
+        signal: controller.signal
       });
       const result = await response.json();
 
@@ -60,11 +71,18 @@ export function useLottoWinning() {
       } else {
         setError(result.message || '당첨 정보를 불러올 수 없습니다.');
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        // 취소된 요청은 조용히 무시 (중복 호출 차단됨)
+        return;
+      }
       console.error(err);
       setError('서버와 통신할 수 없습니다.');
     } finally {
-      setLoading(false);
+      // 현재 컨트롤러가 그대로면 삭제 (다른 요청에 의해 덮어씌워지지 않은 경우에만)
+      if (fetchAbortController.current?.signal.aborted === false) {
+        setLoading(false);
+      }
     }
   }, []);
 
