@@ -1,4 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+
+declare global {
+  interface Window {
+    kakao: any;
+  }
+}
 import {
   MapPin, Trophy, Store, ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
   X, Star, Award, TrendingUp, Zap, Hash, Crown, Copy, Check, Search, Filter, Loader2
@@ -178,10 +184,32 @@ function StoreDetailModal({
 }) {
   const [copied, setCopied] = useState(false);
   const { data: store, loading, error, fetchDetail } = useWinningStoreDetail();
+  const mapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchDetail(storeId);
   }, [storeId, fetchDetail]);
+
+  useEffect(() => {
+    if (store && mapRef.current && window.kakao && window.kakao.maps) {
+      window.kakao.maps.load(() => {
+        if (mapRef.current) {
+          mapRef.current.innerHTML = '';
+        }
+        const position = new window.kakao.maps.LatLng(store.latitude, store.longitude);
+        const options = {
+          center: position,
+          level: 3,
+        };
+        const map = new window.kakao.maps.Map(mapRef.current, options);
+        
+        const marker = new window.kakao.maps.Marker({
+          position,
+        });
+        marker.setMap(map);
+      });
+    }
+  }, [store]);
 
   const handleCopyAddress = async (address: string) => {
     try {
@@ -263,18 +291,13 @@ function StoreDetailModal({
 
             <div className="overflow-y-auto flex-1">
               {/* 지도 */}
-              <div className="relative h-48 bg-gray-100 overflow-hidden">
-                <iframe
-                  title="store-map"
-                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${store.longitude - 0.005}%2C${store.latitude - 0.003}%2C${store.longitude + 0.005}%2C${store.latitude + 0.003}&layer=mapnik&marker=${store.latitude}%2C${store.longitude}`}
-                  width="100%"
-                  height="100%"
-                  className="border-0"
-                  loading="lazy"
-                />
-                <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 text-[10px] text-gray-500 font-medium">
-                  © OpenStreetMap
-                </div>
+              <div ref={mapRef} className="relative h-48 sm:h-56 bg-gray-100 overflow-hidden w-full">
+                {!window.kakao && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 font-medium text-sm">
+                    <Loader2 className="w-6 h-6 animate-spin mb-2" />
+                    지도 로딩 중...
+                  </div>
+                )}
               </div>
 
               <div className="p-5 space-y-4">
