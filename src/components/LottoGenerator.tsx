@@ -12,7 +12,6 @@ const MODES: { id: GenerationMode; emoji: string; label: string; desc: string }[
   { id: 'cold',     emoji: '🧊', label: '냉동 번호',  desc: '오랫동안 안 나온 번호 중심' },
   { id: 'balanced', emoji: '⚖️', label: '홀짝 밸런스', desc: '홀수 3개 + 짝수 3개 균형' },
   { id: 'random',   emoji: '🎲', label: '완전 무작위', desc: '순수 랜덤 번호 생성' },
-  { id: 'ai',       emoji: '🤖', label: 'AI 추천',    desc: '통계 + 구간 분산 + 핫넘버' },
 ];
 
 const ALL_NUMBERS = Array.from({ length: 45 }, (_, i) => i + 1);
@@ -102,7 +101,7 @@ export function LottoGenerator({ onGenerate }: LottoGeneratorProps) {
 
         {/* 모드 선택 */}
         <div className="space-y-2">
-          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {MODES.map((mode) => {
               const isSelected = selectedMode === mode.id;
               return (
