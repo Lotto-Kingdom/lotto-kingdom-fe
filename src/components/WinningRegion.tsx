@@ -1,13 +1,14 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   MapPin, Trophy, Store, ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
-  X, Star, Award, TrendingUp, Zap, Hash, Crown, Copy, Check, Search, Filter, RefreshCw,
+  X, Star, Award, TrendingUp, Zap, Hash, Crown, Copy, Check, Search, Filter, RefreshCw, Loader2
 } from 'lucide-react';
 import {
-  MOCK_STORES,
-  MOCK_ROUNDS,
-  getRegionStats,
-  type WinningStore,
+  useWinningStoreSummary,
+  useWinningStoreRanking,
+  useWinningStoreRounds,
+  useWinningStoreDetail,
+  type WinningStoreRanking,
   type RoundStore,
 } from '../hooks/useWinningRegion';
 
@@ -62,13 +63,13 @@ function TopStoreCard({
   maxCount,
   onClick,
 }: {
-  store: WinningStore;
+  store: WinningStoreRanking;
   rank: number;
   maxCount: number;
   onClick: () => void;
 }) {
   const c = regionColor(store.region);
-  const pct = Math.round((store.rank1Count / maxCount) * 100);
+  const pct = Math.round((store.rank1Count / Math.max(maxCount, 1)) * 100);
 
   const medalBg =
     rank === 1 ? 'bg-gradient-to-br from-amber-400 to-yellow-500 shadow-amber-200' :
@@ -86,20 +87,17 @@ function TopStoreCard({
       }`}
     >
       <div className="flex items-center gap-3">
-        {/* 순위 */}
         <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm shadow-sm flex-shrink-0 ${medalBg} ${medalText}`}>
           {rank <= 3 ? ['🥇','🥈','🥉'][rank-1] : rank}
         </div>
 
-        {/* 정보 */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
-            <span className="font-black text-gray-900 text-sm truncate">{store.name}</span>
+            <span className="font-black text-gray-900 text-sm truncate">{store.storeName}</span>
             <RegionBadge region={store.region} small />
           </div>
           <p className="text-[11px] text-gray-400 truncate">{store.district}</p>
 
-          {/* 진행 바 */}
           <div className="flex items-center gap-2 mt-1.5">
             <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
               <div
@@ -115,7 +113,6 @@ function TopStoreCard({
           </div>
         </div>
 
-        {/* 횟수 */}
         <div className="flex-shrink-0 text-right">
           <p className={`text-xl font-black ${rank === 1 ? 'text-amber-500' : 'text-gray-800'}`}>
             {store.rank1Count}
@@ -149,7 +146,7 @@ function RoundRow({
       </span>
       <button
         onClick={() => onStoreClick(round.storeId)}
-        className="flex items-center gap-2 flex-1 min-w-0 group-hover:text-blue-600 transition-colors"
+        className="flex items-center gap-2 flex-1 min-w-0 group-hover:text-blue-600 transition-colors text-left"
       >
         <Store className="w-4 h-4 text-gray-400 flex-shrink-0 group-hover:text-blue-500" />
         <span className="font-bold text-gray-800 text-sm truncate group-hover:text-blue-600">
@@ -172,24 +169,27 @@ function RoundRow({
 // 당첨가게 상세 모달
 // ─────────────────────────────────────────────
 function StoreDetailModal({
-  store,
+  storeId,
   onClose,
 }: {
-  store: WinningStore;
+  storeId: string;
   onClose: () => void;
 }) {
   const [copied, setCopied] = useState(false);
-  const c = regionColor(store.region);
+  const { data: store, loading, error, fetchDetail } = useWinningStoreDetail();
 
-  const handleCopyAddress = async () => {
+  useEffect(() => {
+    fetchDetail(storeId);
+  }, [storeId, fetchDetail]);
+
+  const handleCopyAddress = async (address: string) => {
     try {
-      await navigator.clipboard.writeText(store.address);
+      await navigator.clipboard.writeText(address);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // fallback for older browsers
       const el = document.createElement('textarea');
-      el.value = store.address;
+      el.value = address;
       document.body.appendChild(el);
       el.select();
       document.execCommand('copy');
@@ -199,13 +199,6 @@ function StoreDetailModal({
     }
   };
 
-  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${
-    store.lng - 0.005
-  }%2C${store.lat - 0.003}%2C${store.lng + 0.005}%2C${store.lat + 0.003}&layer=mapnik&marker=${store.lat}%2C${store.lng}`;
-
-  const relatedRounds = MOCK_ROUNDS.filter((r) => r.storeId === store.id)
-    .sort((a, b) => b.drwNo - a.drwNo);
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
@@ -213,127 +206,142 @@ function StoreDetailModal({
     >
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
-        {/* 모달 헤더 */}
-        <div className={`${c.bg} border-b ${c.border} p-5 flex-shrink-0`}>
-          <div className="flex items-start justify-between">
-            <div className="flex items-start gap-3">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${c.badge}`}>
-                <Store className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="font-black text-gray-900 text-lg leading-tight">{store.name}</h3>
-                <button
-                  onClick={handleCopyAddress}
-                  className="flex items-center gap-1.5 mt-0.5 group text-left"
-                >
-                  <p className="text-sm text-gray-500 group-hover:text-gray-700 transition-colors">
-                    {store.address}
-                  </p>
-                  <span className={`flex-shrink-0 flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md transition-all ${
-                    copied
-                      ? 'bg-emerald-100 text-emerald-600'
-                      : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200 group-hover:text-gray-600'
-                  }`}>
-                    {copied
-                      ? <><Check className="w-3 h-3" />복사됨</>
-                      : <><Copy className="w-3 h-3" />복사</>
-                    }
-                  </span>
-                </button>
-                <div className="mt-1.5">
-                  <RegionBadge region={store.region} />
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-xl bg-white/70 hover:bg-white transition-colors flex-shrink-0"
-            >
-              <X className="w-5 h-5 text-gray-500" />
-            </button>
+        {loading ? (
+          <div className="p-10 flex flex-col items-center justify-center">
+            <Loader2 className="w-8 h-8 text-purple-500 animate-spin mb-3" />
+            <p className="text-gray-500 font-medium">판매점 정보를 불러오는 중...</p>
           </div>
-        </div>
-
-        <div className="overflow-y-auto flex-1">
-          {/* 지도 */}
-          <div className="relative h-48 bg-gray-100 overflow-hidden">
-            <iframe
-              title="store-map"
-              src={mapUrl}
-              width="100%"
-              height="100%"
-              className="border-0"
-              loading="lazy"
-            />
-            <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 text-[10px] text-gray-500 font-medium">
-              © OpenStreetMap
-            </div>
+        ) : error ? (
+          <div className="p-10 flex flex-col items-center justify-center">
+            <X className="w-10 h-10 text-red-400 mb-3" />
+            <p className="text-gray-600 font-medium">{error}</p>
+            <button onClick={onClose} className="mt-4 px-4 py-2 bg-gray-100 rounded-xl text-gray-700 font-bold hover:bg-gray-200 transition">닫기</button>
           </div>
-
-          <div className="p-5 space-y-4">
-            {/* 당첨 통계 */}
-            <div>
-              <h4 className="font-black text-gray-800 text-sm mb-3 flex items-center gap-1.5">
-                <Trophy className="w-4 h-4 text-amber-500" />
-                당첨 통계
-              </h4>
-              <div className="grid grid-cols-3 gap-2.5">
-                <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl p-3.5 text-center border border-amber-100">
-                  <div className="flex items-center justify-center mb-1.5">
-                    <div className="w-7 h-7 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full flex items-center justify-center shadow-sm">
-                      <Star className="w-3.5 h-3.5 text-white" fill="white" />
-                    </div>
+        ) : store ? (
+          <>
+            {/* 모달 헤더 */}
+            <div className={`${regionColor(store.region).bg} border-b ${regionColor(store.region).border} p-5 flex-shrink-0`}>
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-3">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${regionColor(store.region).badge}`}>
+                    <Store className="w-6 h-6 text-white" />
                   </div>
-                  <p className="text-2xl font-black text-amber-700">{store.rank1Count}</p>
-                  <p className="text-[10px] text-amber-600 font-semibold mt-0.5">1등 당첨</p>
-                </div>
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-3.5 text-center border border-blue-100">
-                  <div className="flex items-center justify-center mb-1.5">
-                    <div className="w-7 h-7 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center shadow-sm">
-                      <Award className="w-3.5 h-3.5 text-white" />
-                    </div>
-                  </div>
-                  <p className="text-2xl font-black text-blue-700">{store.rank2Count}</p>
-                  <p className="text-[10px] text-blue-600 font-semibold mt-0.5">2등 당첨</p>
-                </div>
-                <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-3.5 text-center border border-emerald-100">
-                  <div className="flex items-center justify-center mb-1.5">
-                    <div className="w-7 h-7 bg-gradient-to-br from-emerald-400 to-green-500 rounded-full flex items-center justify-center shadow-sm">
-                      <TrendingUp className="w-3.5 h-3.5 text-white" />
-                    </div>
-                  </div>
-                  <p className="text-2xl font-black text-emerald-700">{store.rank3Count}</p>
-                  <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">3등 당첨</p>
-                </div>
-              </div>
-            </div>
-
-            {/* 1등 당첨 회차 */}
-            {relatedRounds.length > 0 && (
-              <div>
-                <h4 className="font-black text-gray-800 text-sm mb-2.5 flex items-center gap-1.5">
-                  <Hash className="w-4 h-4 text-purple-500" />
-                  1등 당첨 회차
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {relatedRounds.map((r) => (
-                    <div key={r.drwNo} className="flex items-center gap-1.5 bg-white border border-gray-100 rounded-xl px-3 py-1.5 shadow-sm">
-                      <span className="text-xs font-black text-gray-700">{r.drwNo}회</span>
-                      <span className="text-[10px] text-gray-400">{r.drwNoDate}</span>
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                        r.method === 'auto'
-                          ? 'bg-emerald-50 text-emerald-600'
-                          : 'bg-purple-50 text-purple-600'
+                  <div>
+                    <h3 className="font-black text-gray-900 text-lg leading-tight">{store.storeName}</h3>
+                    <button
+                      onClick={() => handleCopyAddress(store.address)}
+                      className="flex items-center gap-1.5 mt-0.5 group text-left"
+                    >
+                      <p className="text-sm text-gray-500 group-hover:text-gray-700 transition-colors">
+                        {store.address}
+                      </p>
+                      <span className={`flex-shrink-0 flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md transition-all ${
+                        copied
+                          ? 'bg-emerald-100 text-emerald-600'
+                          : 'bg-gray-100 text-gray-400 group-hover:bg-gray-200 group-hover:text-gray-600'
                       }`}>
-                        {r.method === 'auto' ? '자동' : '수동'}
+                        {copied
+                          ? <><Check className="w-3 h-3" />복사됨</>
+                          : <><Copy className="w-3 h-3" />복사</>
+                        }
                       </span>
+                    </button>
+                    <div className="mt-1.5">
+                      <RegionBadge region={store.region} />
                     </div>
-                  ))}
+                  </div>
+                </div>
+                <button
+                  onClick={onClose}
+                  className="p-2 rounded-xl bg-white/70 hover:bg-white transition-colors flex-shrink-0"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-y-auto flex-1">
+              {/* 지도 */}
+              <div className="relative h-48 bg-gray-100 overflow-hidden">
+                <iframe
+                  title="store-map"
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${store.longitude - 0.005}%2C${store.latitude - 0.003}%2C${store.longitude + 0.005}%2C${store.latitude + 0.003}&layer=mapnik&marker=${store.latitude}%2C${store.longitude}`}
+                  width="100%"
+                  height="100%"
+                  className="border-0"
+                  loading="lazy"
+                />
+                <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 text-[10px] text-gray-500 font-medium">
+                  © OpenStreetMap
                 </div>
               </div>
-            )}
-          </div>
-        </div>
+
+              <div className="p-5 space-y-4">
+                {/* 당첨 통계 */}
+                <div>
+                  <h4 className="font-black text-gray-800 text-sm mb-3 flex items-center gap-1.5">
+                    <Trophy className="w-4 h-4 text-amber-500" />
+                    당첨 통계
+                  </h4>
+                  <div className="grid grid-cols-3 gap-2.5">
+                    <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl p-3.5 text-center border border-amber-100">
+                      <div className="flex items-center justify-center mb-1.5">
+                        <div className="w-7 h-7 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full flex items-center justify-center shadow-sm">
+                          <Star className="w-3.5 h-3.5 text-white" fill="white" />
+                        </div>
+                      </div>
+                      <p className="text-2xl font-black text-amber-700">{store.rank1Count}</p>
+                      <p className="text-[10px] text-amber-600 font-semibold mt-0.5">1등 당첨</p>
+                    </div>
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-3.5 text-center border border-blue-100">
+                      <div className="flex items-center justify-center mb-1.5">
+                        <div className="w-7 h-7 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full flex items-center justify-center shadow-sm">
+                          <Award className="w-3.5 h-3.5 text-white" />
+                        </div>
+                      </div>
+                      <p className="text-2xl font-black text-blue-700">{store.rank2Count}</p>
+                      <p className="text-[10px] text-blue-600 font-semibold mt-0.5">2등 당첨</p>
+                    </div>
+                    <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-3.5 text-center border border-emerald-100">
+                      <div className="flex items-center justify-center mb-1.5">
+                        <div className="w-7 h-7 bg-gradient-to-br from-emerald-400 to-green-500 rounded-full flex items-center justify-center shadow-sm">
+                          <TrendingUp className="w-3.5 h-3.5 text-white" />
+                        </div>
+                      </div>
+                      <p className="text-2xl font-black text-emerald-700">{store.rank3Count}</p>
+                      <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">3등 당첨</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 1등 당첨 회차 */}
+                {store.winRounds && store.winRounds.length > 0 && (
+                  <div>
+                    <h4 className="font-black text-gray-800 text-sm mb-2.5 flex items-center gap-1.5">
+                      <Hash className="w-4 h-4 text-purple-500" />
+                      1등 당첨 회차
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {store.winRounds.map((r) => (
+                        <div key={r.drwNo} className="flex items-center gap-1.5 bg-white border border-gray-100 rounded-xl px-3 py-1.5 shadow-sm">
+                          <span className="text-xs font-black text-gray-700">{r.drwNo}회</span>
+                          <span className="text-[10px] text-gray-400">{r.drwNoDate}</span>
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                            r.method === 'auto'
+                              ? 'bg-emerald-50 text-emerald-600'
+                              : 'bg-purple-50 text-purple-600'
+                          }`}>
+                            {r.method === 'auto' ? '자동' : '수동'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        ) : null}
       </div>
     </div>
   );
@@ -347,40 +355,31 @@ const TOP_N = 5;
 
 export function WinningRegion() {
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
-  const [selectedStore, setSelectedStore] = useState<WinningStore | null>(null);
+  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [showAllTop, setShowAllTop] = useState(false);
   const [regionExpanded, setRegionExpanded] = useState(false);
   const [roundSearchInput, setRoundSearchInput] = useState('');
   const [searchedRound, setSearchedRound] = useState<number | null>(null);
-  const [roundNotFound, setRoundNotFound] = useState(false);
   const [isRoundFilterExpanded, setIsRoundFilterExpanded] = useState(false);
 
-  const regionStats = useMemo(() => getRegionStats(), []);
-  const maxRegionCount = regionStats[0]?.rank1Count ?? 1;
+  // APIs
+  const { data: summary, loading: summaryLoading, fetchSummary } = useWinningStoreSummary();
+  const { data: rankingData, loading: rankingLoading, fetchRanking } = useWinningStoreRanking();
+  const { data: roundsData, loading: roundsLoading, fetchRounds } = useWinningStoreRounds();
 
-  // TOP 판매점 (1등 당첨 횟수 기준)
-  const sortedStores = useMemo(
-    () => [...MOCK_STORES].sort((a, b) => b.rank1Count - a.rank1Count),
-    []
-  );
-  const displayedTopStores = showAllTop ? sortedStores.slice(0, 10) : sortedStores.slice(0, TOP_N);
-  const maxStoreCount = sortedStores[0]?.rank1Count ?? 1;
+  useEffect(() => {
+    fetchSummary();
+  }, [fetchSummary]);
 
-  // 회차 목록 (지역 필터)
-  const filteredRounds = useMemo(() => {
-    if (!selectedRegion) return MOCK_ROUNDS;
-    return MOCK_ROUNDS.filter((r) => r.region === selectedRegion);
-  }, [selectedRegion]);
+  useEffect(() => {
+    fetchRanking(showAllTop ? 10 : TOP_N);
+  }, [fetchRanking, showAllTop]);
 
-  // 회차 검색 결과
-  const roundSearchResult = useMemo(() => {
-    if (searchedRound === null) return null;
-    return MOCK_ROUNDS.find((r) => r.drwNo === searchedRound) ?? null;
-  }, [searchedRound]);
-
-  const totalPages = Math.ceil(filteredRounds.length / PAGE_SIZE);
-  const displayedRounds = filteredRounds.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  useEffect(() => {
+    // API page is 0-indexed
+    fetchRounds(page - 1, PAGE_SIZE, selectedRegion, searchedRound);
+  }, [fetchRounds, page, selectedRegion, searchedRound]);
 
   const handleRegionClick = (region: string) => {
     if (selectedRegion === region) {
@@ -394,9 +393,8 @@ export function WinningRegion() {
   const handleRoundSearch = () => {
     const n = parseInt(roundSearchInput.trim());
     if (!n || n < 1) return;
-    const found = MOCK_ROUNDS.find((r) => r.drwNo === n);
-    setRoundNotFound(!found);
     setSearchedRound(n);
+    setPage(1);
   };
 
   const handleRoundSearchKeyDown = (e: React.KeyboardEvent) => {
@@ -406,18 +404,28 @@ export function WinningRegion() {
   const handleClearRoundSearch = () => {
     setSearchedRound(null);
     setRoundSearchInput('');
-    setRoundNotFound(false);
+    setPage(1);
   };
 
   const handleStoreClick = (storeId: string) => {
-    const store = MOCK_STORES.find((s) => s.id === storeId);
-    if (store) setSelectedStore(store);
+    setSelectedStoreId(storeId);
   };
 
-  const totalRank1 = MOCK_STORES.reduce((s, st) => s + st.rank1Count, 0);
+  const maxRegionCount = summary?.regionStats?.[0]?.rank1Count ?? 1;
+  const displayedTopStores = rankingData?.content ?? [];
+  const maxStoreCount = displayedTopStores[0]?.rank1Count ?? 1;
+
+  const totalPages = roundsData?.totalPages ?? 1;
+  const displayedRounds = roundsData?.content ?? [];
 
   return (
-    <div className="w-full space-y-4 sm:space-y-6">
+    <div className="w-full space-y-4 sm:space-y-6 relative">
+      {/* 글로벌 로딩 표시 */}
+      {(summaryLoading && !summary) && (
+        <div className="absolute inset-0 z-10 bg-white/50 backdrop-blur-sm flex items-center justify-center min-h-[500px] rounded-3xl">
+          <Loader2 className="w-10 h-10 text-purple-500 animate-spin" />
+        </div>
+      )}
 
       {/* ① 페이지 헤더 */}
       <div className="flex items-center gap-2">
@@ -426,38 +434,47 @@ export function WinningRegion() {
       </div>
 
       {/* ② 히어로 배너 */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 rounded-3xl shadow-xl p-5 sm:p-7">
-        <div className="absolute top-0 right-0 w-56 h-56 bg-white/10 rounded-full -translate-y-1/3 translate-x-1/3" />
-        <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/10 rounded-full translate-y-1/3 -translate-x-1/3" />
-        <div className="relative z-10">
-          <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm text-white text-xs font-bold rounded-full mb-3">
-            전국 당첨 현황
-          </span>
-          <div className="grid grid-cols-3 gap-3 sm:gap-6">
-            <div>
-              <p className="text-white/70 text-xs mb-1">총 1등 당첨</p>
-              <p className="text-white font-black text-2xl sm:text-3xl">{totalRank1}회</p>
+      {summary && (
+        <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 rounded-3xl shadow-xl p-5 sm:p-7">
+          <div className="absolute top-0 right-0 w-56 h-56 bg-white/10 rounded-full -translate-y-1/3 translate-x-1/3" />
+          <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/10 rounded-full translate-y-1/3 -translate-x-1/3" />
+          <div className="relative z-10">
+            <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm text-white text-xs font-bold rounded-full mb-3">
+              전국 당첨 현황
+            </span>
+            <div className="grid grid-cols-3 gap-3 sm:gap-6">
+              <div>
+                <p className="text-white/70 text-xs mb-1">총 1등 당첨</p>
+                <p className="text-white font-black text-2xl sm:text-3xl">{summary.totalRank1Wins}회</p>
+              </div>
+              <div>
+                <p className="text-white/70 text-xs mb-1">당첨 지역</p>
+                <p className="text-white font-black text-2xl sm:text-3xl">{summary.totalWinningRegions}개</p>
+              </div>
+              <div>
+                <p className="text-white/70 text-xs mb-1">등록 판매점</p>
+                <p className="text-white font-black text-2xl sm:text-3xl">{summary.totalRegisteredStores}곳</p>
+              </div>
             </div>
-            <div>
-              <p className="text-white/70 text-xs mb-1">당첨 지역</p>
-              <p className="text-white font-black text-2xl sm:text-3xl">{regionStats.length}개</p>
-            </div>
-            <div>
-              <p className="text-white/70 text-xs mb-1">등록 판매점</p>
-              <p className="text-white font-black text-2xl sm:text-3xl">{MOCK_STORES.length}곳</p>
-            </div>
-          </div>
-          <div className="mt-4 flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-2xl px-4 py-2.5 w-fit">
-            <Zap className="w-4 h-4 text-yellow-300 flex-shrink-0" />
-            <span className="text-white/80 text-xs">최다 배출점</span>
-            <span className="text-white font-black text-sm">{sortedStores[0]?.name}</span>
-            <span className="text-yellow-300 font-black text-sm">{sortedStores[0]?.rank1Count}회</span>
+            {summary.bestStore && (
+              <div className="mt-4 flex items-center gap-2 bg-white/15 backdrop-blur-sm rounded-2xl px-4 py-2.5 w-fit">
+                <Zap className="w-4 h-4 text-yellow-300 flex-shrink-0" />
+                <span className="text-white/80 text-xs">최다 배출점</span>
+                <span className="text-white font-black text-sm">{summary.bestStore.storeName}</span>
+                <span className="text-yellow-300 font-black text-sm">{summary.bestStore.rank1Count}회</span>
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      )}
 
-      {/* ③ 최다 1등 당첨 판매점 TOP 5 / TOP 10 */}
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-4 sm:p-6">
+      {/* ③ 최다 1등 당첨 판매점 TOP N */}
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-4 sm:p-6 relative">
+        {rankingLoading && !rankingData && (
+          <div className="absolute inset-0 z-10 bg-white/70 backdrop-blur-sm rounded-3xl flex items-center justify-center">
+            <Loader2 className="w-6 h-6 text-amber-500 animate-spin" />
+          </div>
+        )}
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-black text-gray-800 text-base sm:text-lg flex items-center gap-2">
             <Crown className="w-5 h-5 text-amber-500" />
@@ -471,17 +488,16 @@ export function WinningRegion() {
         <div className="space-y-2.5">
           {displayedTopStores.map((store, idx) => (
             <TopStoreCard
-              key={store.id}
+              key={store.storeId}
               store={store}
               rank={idx + 1}
               maxCount={maxStoreCount}
-              onClick={() => setSelectedStore(store)}
+              onClick={() => handleStoreClick(store.storeId)}
             />
           ))}
         </div>
 
-        {/* TOP 5 ↔ TOP 10 토글 */}
-        {sortedStores.length > TOP_N && (
+        {rankingData && rankingData.totalElements > TOP_N && (
           <button
             onClick={() => setShowAllTop((v) => !v)}
             className="mt-3 w-full py-2.5 rounded-2xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-bold text-gray-600 flex items-center justify-center gap-1.5"
@@ -492,144 +508,139 @@ export function WinningRegion() {
         )}
       </div>
 
-      {/* ④ 지역별 현황 - 가로 스크롤 탭 (모바일 친화) */}
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-4 sm:p-6">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-black text-gray-800 text-base sm:text-lg flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-teal-500" />
-            지역별 1등 당첨 횟수
-          </h3>
-          {selectedRegion && (
+      {/* ④ 지역별 현황 */}
+      {summary && summary.regionStats && (
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-4 sm:p-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-black text-gray-800 text-base sm:text-lg flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-teal-500" />
+              지역별 1등 당첨 횟수
+            </h3>
+            {selectedRegion && (
+              <button
+                onClick={() => { setSelectedRegion(null); setPage(1); }}
+                className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 transition-colors px-3 py-1.5 rounded-xl"
+              >
+                <X className="w-3.5 h-3.5" />
+                필터 해제
+              </button>
+            )}
+          </div>
+
+          <div className="flex gap-2 overflow-x-auto pb-1 sm:hidden no-scrollbar">
             <button
               onClick={() => { setSelectedRegion(null); setPage(1); }}
-              className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 transition-colors px-3 py-1.5 rounded-xl"
+              className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                selectedRegion === null
+                  ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-sm'
+                  : 'bg-white border border-gray-200 text-gray-600'
+              }`}
             >
-              <X className="w-3.5 h-3.5" />
-              필터 해제
+              전체
             </button>
-          )}
-        </div>
-
-        {/* 모바일: 가로 스크롤 칩 */}
-        <div className="flex gap-2 overflow-x-auto pb-1 sm:hidden no-scrollbar">
-          <button
-            onClick={() => { setSelectedRegion(null); setPage(1); }}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              selectedRegion === null
-                ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-sm'
-                : 'bg-white border border-gray-200 text-gray-600'
-            }`}
-          >
-            전체
-          </button>
-          {regionStats.map((stat) => {
-            const c = regionColor(stat.name);
-            const active = selectedRegion === stat.name;
-            return (
-              <button
-                key={stat.name}
-                onClick={() => handleRegionClick(stat.name)}
-                className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  active ? `${c.badge} text-white shadow-sm` : `${c.bg} ${c.text} border ${c.border}`
-                }`}
-              >
-                {stat.name}
-                <span className={`text-[10px] font-black ${active ? 'text-white/80' : ''}`}>
-                  {stat.rank1Count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* 데스크톱: 카드 그리드 (접기/펼치기) */}
-        <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-          {regionStats
-            .slice(0, regionExpanded ? undefined : 6)
-            .map((stat, idx) => {
+            {summary.regionStats.map((stat) => {
               const c = regionColor(stat.name);
-              const pct = Math.round((stat.rank1Count / maxRegionCount) * 100);
-              const isSelected = selectedRegion === stat.name;
+              const active = selectedRegion === stat.name;
               return (
                 <button
                   key={stat.name}
                   onClick={() => handleRegionClick(stat.name)}
-                  className={`w-full text-left rounded-2xl border-2 p-3.5 transition-all duration-200 hover:shadow-md active:scale-[0.98] ${
-                    isSelected ? `${c.bg} ${c.border} shadow-md` : 'bg-white border-gray-100 hover:border-gray-200'
+                  className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    active ? `${c.badge} text-white shadow-sm` : `${c.bg} ${c.text} border ${c.border}`
                   }`}
                 >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-black shadow-sm ${
-                        idx === 0 ? 'bg-gradient-to-br from-amber-400 to-yellow-500' :
-                        idx === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400' :
-                        idx === 2 ? 'bg-gradient-to-br from-orange-400 to-amber-600' :
-                        'bg-gray-200 !text-gray-500'
-                      }`}>
-                        {idx + 1}
-                      </div>
-                      <span className="font-black text-gray-800 text-sm">{stat.name}</span>
-                    </div>
-                    <span className={`text-base font-black ${c.text}`}>{stat.rank1Count}회</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mb-1.5">
-                    <div className={`h-full rounded-full ${c.badge}`} style={{ width: `${pct}%` }} />
-                  </div>
-                  <div className="flex justify-between text-[11px] text-gray-400">
-                    <span>판매점 {stat.storeCount}곳</span>
-                    <span className={`font-semibold ${c.text} truncate max-w-[90px]`}>{stat.topStore}</span>
-                  </div>
+                  {stat.name}
+                  <span className={`text-[10px] font-black ${active ? 'text-white/80' : ''}`}>
+                    {stat.rank1Count}
+                  </span>
                 </button>
               );
             })}
+          </div>
+
+          <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            {summary.regionStats
+              .slice(0, regionExpanded ? undefined : 6)
+              .map((stat, idx) => {
+                const c = regionColor(stat.name);
+                const pct = Math.round((stat.rank1Count / maxRegionCount) * 100);
+                const isSelected = selectedRegion === stat.name;
+                return (
+                  <button
+                    key={stat.name}
+                    onClick={() => handleRegionClick(stat.name)}
+                    className={`w-full text-left rounded-2xl border-2 p-3.5 transition-all duration-200 hover:shadow-md active:scale-[0.98] ${
+                      isSelected ? `${c.bg} ${c.border} shadow-md` : 'bg-white border-gray-100 hover:border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-black shadow-sm ${
+                          idx === 0 ? 'bg-gradient-to-br from-amber-400 to-yellow-500' :
+                          idx === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-400' :
+                          idx === 2 ? 'bg-gradient-to-br from-orange-400 to-amber-600' :
+                          'bg-gray-200 !text-gray-500'
+                        }`}>
+                          {idx + 1}
+                        </div>
+                        <span className="font-black text-gray-800 text-sm">{stat.name}</span>
+                      </div>
+                      <span className={`text-base font-black ${c.text}`}>{stat.rank1Count}회</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mb-1.5">
+                      <div className={`h-full rounded-full ${c.badge}`} style={{ width: `${pct}%` }} />
+                    </div>
+                    <div className="flex justify-between text-[11px] text-gray-400">
+                      <span>판매점 {stat.storeCount}곳</span>
+                      <span className={`font-semibold ${c.text} truncate max-w-[90px]`}>{stat.topStore}</span>
+                    </div>
+                  </button>
+                );
+              })}
+          </div>
+          {summary.regionStats.length > 6 && (
+            <button
+              onClick={() => setRegionExpanded((v) => !v)}
+              className="hidden sm:flex mt-3 w-full py-2.5 rounded-2xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-bold text-gray-600 items-center justify-center gap-1.5"
+            >
+              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${regionExpanded ? 'rotate-180' : ''}`} />
+              {regionExpanded ? '접기' : `${summary.regionStats.length - 6}개 지역 더 보기`}
+            </button>
+          )}
         </div>
-        {regionStats.length > 6 && (
-          <button
-            onClick={() => setRegionExpanded((v) => !v)}
-            className="hidden sm:flex mt-3 w-full py-2.5 rounded-2xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors text-sm font-bold text-gray-600 items-center justify-center gap-1.5"
-          >
-            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${regionExpanded ? 'rotate-180' : ''}`} />
-            {regionExpanded ? '접기' : `${regionStats.length - 6}개 지역 더 보기`}
-          </button>
-        )}
-      </div>
+      )}
 
       {/* ⑤ 회차별 당첨 판매점 목록 */}
-      <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl shadow-lg p-4 sm:p-6">
-        {/* 헤더 */}
+      <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl shadow-lg p-4 sm:p-6 relative">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-black text-gray-800 text-base sm:text-lg flex items-center gap-2">
             <Store className="w-5 h-5 text-purple-500" />
             회차별 당첨 판매점
-            {roundSearchResult ? (
+            {searchedRound && (
               <span className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white text-xs font-bold text-purple-700 border border-purple-200 shadow-sm">
-                {roundSearchResult.drwNo}회
+                {searchedRound}회
               </span>
-            ) : selectedRegion ? (
+            )}
+            {selectedRegion && !searchedRound && (
               <span className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-white text-xs font-bold text-gray-700 border border-gray-200 shadow-sm">
                 <MapPin className="w-3 h-3" />
                 {selectedRegion} 필터
               </span>
-            ) : (
-              <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-bold">
-                {filteredRounds.length}건
-              </span>
             )}
           </h3>
-          {selectedRegion && !roundSearchResult && (
+          {(selectedRegion || searchedRound) && (
             <button
-              onClick={() => { setSelectedRegion(null); setPage(1); }}
+              onClick={() => { setSelectedRegion(null); setSearchedRound(null); setRoundSearchInput(''); setPage(1); }}
               className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800 bg-white hover:bg-gray-100 transition-colors px-3 py-1.5 rounded-xl border border-gray-200"
             >
               <X className="w-3.5 h-3.5" />
-              해제
+              초기화
             </button>
           )}
         </div>
 
         {/* 회차 검색 필터 */}
         <div className="mb-4">
-          {/* 모바일: 토글 */}
           <button
             onClick={() => setIsRoundFilterExpanded(!isRoundFilterExpanded)}
             className="lg:hidden w-full flex items-center justify-between p-3 bg-white rounded-xl hover:bg-gray-50 transition-colors touch-manipulation mb-2"
@@ -638,9 +649,9 @@ export function WinningRegion() {
               <Filter className="w-4 h-4 text-gray-600" />
               <span className="text-sm font-medium text-gray-700">
                 회차 검색
-                {roundSearchResult && (
+                {searchedRound && (
                   <span className="ml-2 px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
-                    {roundSearchResult.drwNo}회
+                    {searchedRound}회
                   </span>
                 )}
               </span>
@@ -652,7 +663,6 @@ export function WinningRegion() {
             )}
           </button>
 
-          {/* 데스크톱: 항상 표시 */}
           <div className="hidden lg:flex items-center gap-2 mb-2">
             <Filter className="w-4 h-4 text-gray-600" />
             <label className="text-sm font-medium text-gray-700">회차 검색</label>
@@ -685,127 +695,101 @@ export function WinningRegion() {
                 </button>
               )}
             </div>
-
-            {/* 검색 결과 상태 (데스크톱) */}
-            {roundSearchResult && (
-              <div className="hidden lg:flex items-center gap-2">
-                <span className="text-xs text-gray-600">검색 결과:</span>
-                <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
-                  제 {roundSearchResult.drwNo}회 ({roundSearchResult.drwNoDate}) — {roundSearchResult.storeName}
-                </span>
-              </div>
-            )}
-            {roundNotFound && searchedRound !== null && !roundSearchResult && (
-              <p className="text-xs text-red-500 font-medium px-1">
-                {searchedRound}회차의 당첨 판매점 정보가 없습니다.
-              </p>
-            )}
           </div>
         </div>
 
-        {/* 검색 결과 모드 */}
-        {searchedRound !== null ? (
-          roundSearchResult ? (
-            <div className="space-y-2">
-              <RoundRow round={roundSearchResult} onStoreClick={handleStoreClick} />
-            </div>
-          ) : (
-            <div className="bg-white rounded-2xl p-10 text-center border border-gray-100">
-              <RefreshCw className="w-8 h-8 text-gray-200 mx-auto mb-3" />
-              <p className="text-gray-400 text-sm font-medium">{searchedRound}회차의 당첨 판매점 정보가 없습니다.</p>
-            </div>
-          )
+        {summary && (
+          <div className="flex gap-2 overflow-x-auto pb-1 mb-3 sm:hidden no-scrollbar">
+            <button
+              onClick={() => { setSelectedRegion(null); setPage(1); }}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                selectedRegion === null
+                  ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-sm'
+                  : 'bg-white border border-gray-200 text-gray-600'
+              }`}
+            >
+              전체
+            </button>
+            {summary.regionStats.map((stat) => {
+              const c = regionColor(stat.name);
+              const active = selectedRegion === stat.name;
+              return (
+                <button
+                  key={stat.name}
+                  onClick={() => handleRegionClick(stat.name)}
+                  className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    active ? `${c.badge} text-white shadow-sm` : `${c.bg} ${c.text} border ${c.border}`
+                  }`}
+                >
+                  {stat.name}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {roundsLoading ? (
+          <div className="py-20 flex flex-col items-center justify-center">
+            <Loader2 className="w-8 h-8 text-purple-500 animate-spin mb-3" />
+            <p className="text-gray-500 font-medium">로딩 중...</p>
+          </div>
+        ) : displayedRounds.length === 0 ? (
+          <div className="bg-white rounded-2xl p-10 text-center border border-gray-100">
+            <MapPin className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+            <p className="text-gray-400 text-sm font-medium">
+              {searchedRound ? `${searchedRound}회차의 당첨 판매점이 없습니다.` : '해당 조건의 당첨 이력이 없습니다.'}
+            </p>
+          </div>
         ) : (
-          <>
-            {/* 모바일 지역 필터 칩 */}
-            <div className="flex gap-2 overflow-x-auto pb-1 mb-3 sm:hidden no-scrollbar">
-              <button
-                onClick={() => { setSelectedRegion(null); setPage(1); }}
-                className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  selectedRegion === null
-                    ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-sm'
-                    : 'bg-white border border-gray-200 text-gray-600'
-                }`}
-              >
-                전체
-              </button>
-              {regionStats.map((stat) => {
-                const c = regionColor(stat.name);
-                const active = selectedRegion === stat.name;
-                return (
+          <div className="space-y-2">
+            {displayedRounds.map((round, idx) => (
+              <RoundRow key={`${round.drwNo}-${round.storeId}-${idx}`} round={round} onStoreClick={handleStoreClick} />
+            ))}
+          </div>
+        )}
+
+        {/* 페이지네이션 */}
+        {!roundsLoading && totalPages > 1 && (
+          <div className="flex items-center justify-center gap-1.5 mt-5">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+              .reduce<(number | '...')[]>((acc, p, idx, arr) => {
+                if (idx > 0 && typeof arr[idx - 1] === 'number' && (p as number) - (arr[idx - 1] as number) > 1) acc.push('...');
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((p, idx) =>
+                p === '...' ? (
+                  <span key={`e-${idx}`} className="px-2 text-gray-400 text-sm">…</span>
+                ) : (
                   <button
-                    key={stat.name}
-                    onClick={() => handleRegionClick(stat.name)}
-                    className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                      active ? `${c.badge} text-white shadow-sm` : `${c.bg} ${c.text} border ${c.border}`
+                    key={p}
+                    onClick={() => setPage(p as number)}
+                    className={`w-9 h-9 rounded-xl text-sm font-bold transition-all ${
+                      page === p
+                        ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-md'
+                        : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
                     }`}
                   >
-                    {stat.name}
-                    <span className={`text-[10px] font-black ${active ? 'text-white/80' : ''}`}>
-                      {stat.rank1Count}
-                    </span>
+                    {p}
                   </button>
-                );
-              })}
-            </div>
-
-            {displayedRounds.length === 0 ? (
-              <div className="bg-white rounded-2xl p-10 text-center border border-gray-100">
-                <MapPin className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                <p className="text-gray-400 text-sm font-medium">해당 지역의 당첨 이력이 없습니다.</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {displayedRounds.map((round) => (
-                  <RoundRow key={round.drwNo} round={round} onStoreClick={handleStoreClick} />
-                ))}
-              </div>
-            )}
-
-            {/* 페이지네이션 */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-1.5 mt-5">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-                  .reduce<(number | '...')[]>((acc, p, idx, arr) => {
-                    if (idx > 0 && typeof arr[idx - 1] === 'number' && (p as number) - (arr[idx - 1] as number) > 1) acc.push('...');
-                    acc.push(p);
-                    return acc;
-                  }, [])
-                  .map((p, idx) =>
-                    p === '...' ? (
-                      <span key={`e-${idx}`} className="px-2 text-gray-400 text-sm">…</span>
-                    ) : (
-                      <button
-                        key={p}
-                        onClick={() => setPage(p as number)}
-                        className={`w-9 h-9 rounded-xl text-sm font-bold transition-all ${
-                          page === p
-                            ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-md'
-                            : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-                        }`}
-                      >
-                        {p}
-                      </button>
-                    )
-                  )}
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-          </>
+                )
+              )}
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         )}
       </div>
 
@@ -815,15 +799,15 @@ export function WinningRegion() {
           판매점 클릭 시 상세 정보(지도, 당첨 통계)를 확인할 수 있습니다.
         </p>
         <p className="text-xs text-teal-400 mt-1">
-          본 데이터는 참고용이며 실제 현황과 다를 수 있습니다.
+          본 데이터는 동행복권 제공 정보를 기준으로 합니다.
         </p>
       </div>
 
       {/* 상세 모달 */}
-      {selectedStore && (
+      {selectedStoreId && (
         <StoreDetailModal
-          store={selectedStore}
-          onClose={() => setSelectedStore(null)}
+          storeId={selectedStoreId}
+          onClose={() => setSelectedStoreId(null)}
         />
       )}
     </div>
