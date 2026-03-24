@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   MapPin, Trophy, Store, ChevronLeft, ChevronRight, ChevronDown, ChevronUp,
-  X, Star, Award, TrendingUp, Zap, Hash, Crown, Copy, Check, Search, Filter, RefreshCw, Loader2
+  X, Star, Award, TrendingUp, Zap, Hash, Crown, Copy, Check, Search, Filter, Loader2
 } from 'lucide-react';
 import {
   useWinningStoreSummary,
