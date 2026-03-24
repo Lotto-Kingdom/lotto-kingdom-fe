@@ -54,7 +54,7 @@ function regionColor(region: string) {
 function RegionBadge({ region, small = false }: { region: string; small?: boolean }) {
   const c = regionColor(region);
   return (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg font-bold ${small ? 'text-[10px]' : 'text-xs'} ${c.bg} ${c.text} border ${c.border}`}>
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg font-bold flex-shrink-0 whitespace-nowrap ${small ? 'text-[10px]' : 'text-xs'} ${c.bg} ${c.text} border ${c.border}`}>
       <MapPin className={small ? 'w-2.5 h-2.5' : 'w-3 h-3'} />
       {region}
     </span>
@@ -153,15 +153,17 @@ function RoundRow({
       </span>
       <button
         onClick={() => onStoreClick(round.storeId)}
-        className="flex items-center gap-2 flex-1 min-w-0 group-hover:text-blue-600 transition-colors text-left"
+        className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0 group-hover:text-blue-600 transition-colors text-left"
       >
         <Store className="w-4 h-4 text-gray-400 flex-shrink-0 group-hover:text-blue-500" />
         <span className="font-bold text-gray-800 text-sm truncate group-hover:text-blue-600">
           {round.storeName}
         </span>
-        <RegionBadge region={round.region} small />
+        <div className="flex-shrink-0">
+          <RegionBadge region={round.region} small />
+        </div>
       </button>
-      <span className={`flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+      <span className={`flex-shrink-0 whitespace-nowrap text-[10px] font-bold px-2 py-0.5 rounded-full ${
         round.method === 'auto'
           ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
           : 'bg-purple-50 text-purple-600 border border-purple-200'
