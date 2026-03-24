@@ -307,7 +307,7 @@ function StoreDetailModal({
                     <Trophy className="w-4 h-4 text-amber-500" />
                     당첨 통계
                   </h4>
-                  <div className="grid grid-cols-3 gap-2.5">
+                  <div className="grid grid-cols-2 gap-2.5">
                     <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-2xl p-3.5 text-center border border-amber-100">
                       <div className="flex items-center justify-center mb-1.5">
                         <div className="w-7 h-7 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full flex items-center justify-center shadow-sm">
@@ -325,15 +325,6 @@ function StoreDetailModal({
                       </div>
                       <p className="text-2xl font-black text-blue-700">{store.rank2Count}</p>
                       <p className="text-[10px] text-blue-600 font-semibold mt-0.5">2등 당첨</p>
-                    </div>
-                    <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-3.5 text-center border border-emerald-100">
-                      <div className="flex items-center justify-center mb-1.5">
-                        <div className="w-7 h-7 bg-gradient-to-br from-emerald-400 to-green-500 rounded-full flex items-center justify-center shadow-sm">
-                          <TrendingUp className="w-3.5 h-3.5 text-white" />
-                        </div>
-                      </div>
-                      <p className="text-2xl font-black text-emerald-700">{store.rank3Count}</p>
-                      <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">3등 당첨</p>
                     </div>
                   </div>
                 </div>
