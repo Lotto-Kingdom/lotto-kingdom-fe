@@ -363,6 +363,16 @@ export function WinningRegion() {
   const [searchedRound, setSearchedRound] = useState<number | null>(null);
   const [isRoundFilterExpanded, setIsRoundFilterExpanded] = useState(false);
 
+  const getPageRange = (current: number, total: number, showCount: number) => {
+    let start = Math.max(1, current - Math.floor(showCount / 2));
+    let end = start + showCount - 1;
+    if (end > total) {
+      end = total;
+      start = Math.max(1, end - showCount + 1);
+    }
+    return Array.from({ length: Math.max(1, end - start + 1) }, (_, i) => start + i);
+  };
+
   // APIs
   const { data: summary, loading: summaryLoading, fetchSummary } = useWinningStoreSummary();
   const { data: rankingData, loading: rankingLoading, fetchRanking } = useWinningStoreRanking();
@@ -752,42 +762,67 @@ export function WinningRegion() {
         {!roundsLoading && totalPages > 1 && (
           <div className="flex items-center justify-center gap-1.5 mt-5">
             <button
+              onClick={() => setPage(1)}
+              disabled={page === 1}
+              className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
               className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-              .reduce<(number | '...')[]>((acc, p, idx, arr) => {
-                if (idx > 0 && typeof arr[idx - 1] === 'number' && (p as number) - (arr[idx - 1] as number) > 1) acc.push('...');
-                acc.push(p);
-                return acc;
-              }, [])
-              .map((p, idx) =>
-                p === '...' ? (
-                  <span key={`e-${idx}`} className="px-2 text-gray-400 text-sm">…</span>
-                ) : (
-                  <button
-                    key={p}
-                    onClick={() => setPage(p as number)}
-                    className={`w-9 h-9 rounded-xl text-sm font-bold transition-all ${
-                      page === p
-                        ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-md'
-                        : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    {p}
-                  </button>
-                )
-              )}
+
+            {/* 모바일 뷰 (5개) */}
+            <div className="flex sm:hidden items-center gap-1">
+              {getPageRange(page, totalPages, 5).map((p) => (
+                <button
+                  key={`m-${p}`}
+                  onClick={() => setPage(p)}
+                  className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
+                    page === p
+                      ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-md'
+                      : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+
+            {/* 데스크톱 뷰 (10개) */}
+            <div className="hidden sm:flex items-center gap-1.5">
+              {getPageRange(page, totalPages, 10).map((p) => (
+                <button
+                  key={`d-${p}`}
+                  onClick={() => setPage(p)}
+                  className={`w-9 h-9 rounded-xl text-sm font-bold transition-all ${
+                    page === p
+                      ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-md'
+                      : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
               className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             >
               <ChevronRight className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setPage(totalPages)}
+              disabled={page === totalPages}
+              className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
