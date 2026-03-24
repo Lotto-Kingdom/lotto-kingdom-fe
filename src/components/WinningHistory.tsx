@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Search, Trophy, Users, Banknote, TrendingUp, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, RefreshCw, Filter } from 'lucide-react';
 import { useLottoWinning, WinningDraw } from '../hooks/useLottoWinning';
 import { useLottoFullStatistics, NumberFrequency } from '../hooks/useLottoFullStatistics';
-import { getLottoNumberColor } from '../utils/lottoGenerator';
+import { getLottoNumberColor, getLastDrawnLottoRound } from '../utils/lottoGenerator';
 
 function NumberBall({
   num,
@@ -371,7 +371,7 @@ export function WinningHistory() {
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="조회할 회차를 입력하세요 (예: 1000)"
+                  placeholder={`조회할 회차를 입력하세요 (예: ${getLastDrawnLottoRound()})`}
                   className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-700 placeholder:text-gray-400 focus:border-amber-400 focus:outline-none transition-colors"
                 />
                 <button

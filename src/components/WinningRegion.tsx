@@ -11,6 +11,7 @@ import {
   type WinningStoreRanking,
   type RoundStore,
 } from '../hooks/useWinningRegion';
+import { getLastDrawnLottoRound } from '../utils/lottoGenerator';
 
 // ─────────────────────────────────────────────
 // 지역 색상 팔레트
@@ -686,7 +687,7 @@ export function WinningRegion() {
                 value={roundSearchInput}
                 onChange={(e) => setRoundSearchInput(e.target.value)}
                 onKeyDown={handleRoundSearchKeyDown}
-                placeholder="조회할 회차를 입력하세요 (예: 1150)"
+                placeholder={`조회할 회차를 입력하세요 (예: ${getLastDrawnLottoRound()})`}
                 className="flex-1 px-3 sm:px-4 py-2 sm:py-2.5 bg-white border-2 border-gray-200 rounded-xl text-sm font-medium text-gray-700 placeholder:text-gray-400 focus:border-purple-400 focus:outline-none transition-colors"
               />
               <button
