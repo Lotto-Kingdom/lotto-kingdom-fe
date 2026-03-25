@@ -1,6 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Search, MapPin, Trophy, X, Store as StoreIcon, Check, Copy, Star, Award, TrendingUp, Hash } from 'lucide-react';
-import { NEARBY_STORES, Store, MOCK_ROUNDS } from '../utils/lottoData';
+import { Store } from '../utils/lottoData';
+
+declare global {
+  interface Window {
+    kakao: any;
+  }
+}
 
 // ─────────────────────────────────────────────
 // 지역 색상 팔레트
@@ -72,11 +78,23 @@ function NearbyStoreDetailModal({
         }
     };
 
-    const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${store.lng - 0.005
-        }%2C${store.lat - 0.003}%2C${store.lng + 0.005}%2C${store.lat + 0.003}&layer=mapnik&marker=${store.lat}%2C${store.lng}`;
+    const mapRef = useRef<HTMLDivElement>(null);
+    const relatedRounds: any[] = [];
 
-    const relatedRounds = MOCK_ROUNDS.filter((r) => r.storeId === store.id)
-        .sort((a, b) => b.drwNo - a.drwNo);
+    useEffect(() => {
+        if (mapRef.current && window.kakao && window.kakao.maps) {
+            window.kakao.maps.load(() => {
+                if (mapRef.current) {
+                    mapRef.current.innerHTML = '';
+                }
+                const position = new window.kakao.maps.LatLng(store.lat, store.lng);
+                const options = { center: position, level: 3 };
+                const map = new window.kakao.maps.Map(mapRef.current, options);
+                const marker = new window.kakao.maps.Marker({ position });
+                marker.setMap(map);
+            });
+        }
+    }, [store.lat, store.lng]);
 
     return (
         <div
@@ -130,18 +148,12 @@ function NearbyStoreDetailModal({
 
                 <div className="overflow-y-auto flex-1 custom-scrollbar">
                     {/* 지도 */}
-                    <div className="relative h-48 bg-gray-100 overflow-hidden">
-                        <iframe
-                            title="store-map"
-                            src={mapUrl}
-                            width="100%"
-                            height="100%"
-                            className="border-0"
-                            loading="lazy"
-                        />
-                        <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1 text-[10px] text-gray-500 font-medium pointer-events-none">
-                            © OpenStreetMap
-                        </div>
+                    <div ref={mapRef} className="relative h-48 bg-gray-100 overflow-hidden w-full">
+                        {!window.kakao && (
+                            <div className="absolute inset-0 flex items-center justify-center text-gray-400 font-medium text-sm">
+                                지도 로딩 중...
+                            </div>
+                        )}
                     </div>
 
                     <div className="p-5 space-y-4">
@@ -218,16 +230,43 @@ export function NearbyStore() {
     const [sortBy, setSortBy] = useState<'distance' | 'wins'>('distance');
     const [isSheetOpen, setIsSheetOpen] = useState(true); // 모바일 바텀시트 열림 상태
     const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+    const mapRef = useRef<HTMLDivElement>(null);
 
-    // 필터 연산
-    const filteredStores = NEARBY_STORES.filter(store => {
-        if (filterOnlyHot && !store.isHot) return false;
-        if (searchQuery && !store.name.includes(searchQuery) && !store.address.includes(searchQuery)) return false;
-        return true;
-    }).sort((a, b) => {
-        if (sortBy === 'distance') return a.distance - b.distance;
-        return b.wins.first - a.wins.first;
-    });
+    useEffect(() => {
+        const initMap = (lat: number, lng: number) => {
+            if (mapRef.current && window.kakao && window.kakao.maps) {
+                window.kakao.maps.load(() => {
+                    if (mapRef.current) {
+                        mapRef.current.innerHTML = '';
+                    }
+                    const position = new window.kakao.maps.LatLng(lat, lng);
+                    const options = { center: position, level: 5 };
+                    const map = new window.kakao.maps.Map(mapRef.current, options);
+                    
+                    // 내 위치 마커
+                    const marker = new window.kakao.maps.Marker({ position });
+                    marker.setMap(map);
+                });
+            }
+        };
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    initMap(position.coords.latitude, position.coords.longitude);
+                },
+                () => {
+                    // 카카오 회사 (제주)
+                    initMap(33.450701, 126.570667);
+                }
+            );
+        } else {
+            initMap(33.450701, 126.570667);
+        }
+    }, []);
+
+    // 필터 연산 (임시 데이터 제거에 따라 빈 배열)
+    const filteredStores: Store[] = [];
 
     return (
         <div className="fixed inset-0 top-[64px] sm:top-[80px] z-40 flex bg-gray-50 overflow-hidden">
@@ -367,38 +406,12 @@ export function NearbyStore() {
             </div>
 
             {/* 오른쪽 지도 영역 (PC: 나머지 가득 채움, 모바일: 전체 화면 백그라운드 역할) */}
-            <div className="absolute inset-0 z-10 lg:static lg:flex-1 bg-[#e5e3df] overflow-hidden">
-                {/* 지도 배경 패턴 (가짜 지도 대체용) */}
-                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, black 1px, transparent 0)', backgroundSize: '32px 32px' }} />
-
-                {/* 모바일에서는 바텀시트에 안 가려지게 패딩 처리, 데스크톱은 중앙에 넓게 */}
-                <div className="absolute inset-0 p-4 pb-[55vh] lg:p-12 lg:pb-12 flex flex-wrap justify-center items-center gap-8 lg:gap-24">
-                    {filteredStores.map(store => (
-                        <div key={store.id} className="relative group cursor-pointer animate-pop" style={{
-                            marginLeft: `${store.lng % 0.05 * 1000}px`,
-                            marginTop: `${store.lat % 0.05 * 1000}px`
-                        }}>
-                            {store.isHot ? (
-                                <div className="relative flex flex-col items-center">
-                                    <div className="absolute -top-8 whitespace-nowrap bg-gradient-to-r from-red-600 to-orange-500 text-white text-[10px] sm:text-xs font-black px-2.5 py-1 rounded-full shadow-lg border border-red-400 z-10 flex items-center gap-1 group-hover:-translate-y-1 transition-transform">
-                                        <Trophy className="w-3 h-3 text-yellow-200" />
-                                        1등 {store.wins.first}번
-                                    </div>
-                                    <MapPin className="w-10 h-10 lg:w-14 lg:h-14 text-red-600 fill-white drop-shadow-lg group-hover:scale-110 transition-transform" />
-                                </div>
-                            ) : (
-                                <div className="relative flex flex-col items-center">
-                                    <MapPin className="w-8 h-8 lg:w-10 lg:h-10 text-gray-500 fill-white drop-shadow-md group-hover:scale-110 transition-transform" />
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
-
-                {/* 내 위치 마커 */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 lg:-translate-y-1/2 w-5 h-5 lg:w-6 lg:h-6 bg-blue-600 rounded-full border-[3px] border-white shadow-xl flex items-center justify-center animate-pulse z-20">
-                    <div className="w-10 h-10 lg:w-14 lg:h-14 bg-blue-500/20 rounded-full absolute" />
-                </div>
+            <div ref={mapRef} className="absolute inset-0 z-10 lg:static lg:flex-1 bg-gray-100 overflow-hidden">
+                {!window.kakao && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 font-medium">
+                        지도 로딩 중...
+                    </div>
+                )}
             </div>
 
             {/* 4. 스토어 상세 모달 */}
