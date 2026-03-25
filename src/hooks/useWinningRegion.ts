@@ -74,11 +74,12 @@ export function useWinningStoreSummary() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchSummary = useCallback(async () => {
+  const fetchSummary = useCallback(async (count: number = 20) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/lotto/stores/summary`);
+      const url = `${API_BASE_URL}/api/lotto/stores/summary?count=${count}`;
+      const res = await fetch(url);
       const result = await res.json();
       if (result.success) {
         setData(result.data);
@@ -101,11 +102,12 @@ export function useWinningStoreRanking() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchRanking = useCallback(async (limit: number = 10) => {
+  const fetchRanking = useCallback(async (limit: number = 10, count: number = 20) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/lotto/stores/ranking?limit=${limit}`);
+      const url = `${API_BASE_URL}/api/lotto/stores/ranking?limit=${limit}&count=${count}`;
+      const res = await fetch(url);
       const result = await res.json();
       if (result.success) {
         setData(result.data);
@@ -129,7 +131,7 @@ export function useWinningStoreRounds() {
   const [error, setError] = useState<string | null>(null);
   const fetchAbortController = useRef<AbortController | null>(null);
 
-  const fetchRounds = useCallback(async (page: number = 0, size: number = 10, region?: string | null, drwNo?: number | null) => {
+  const fetchRounds = useCallback(async (page: number = 0, size: number = 10, region?: string | null, drwNo?: number | null, count: number = 20) => {
     if (fetchAbortController.current) {
       fetchAbortController.current.abort();
     }
@@ -142,6 +144,7 @@ export function useWinningStoreRounds() {
       const params = new URLSearchParams();
       params.append('page', page.toString());
       params.append('size', size.toString());
+      params.append('count', count.toString());
       if (region) params.append('region', region);
       if (drwNo) params.append('drwNo', drwNo.toString());
 

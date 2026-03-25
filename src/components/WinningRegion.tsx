@@ -379,6 +379,7 @@ export function WinningRegion() {
   const [roundSearchInput, setRoundSearchInput] = useState('');
   const [searchedRound, setSearchedRound] = useState<number | null>(null);
   const [isRoundFilterExpanded, setIsRoundFilterExpanded] = useState(false);
+  const [selectedCount, setSelectedCount] = useState<number>(0);
 
   const getPageRange = (current: number, total: number, showCount: number) => {
     let start = Math.max(1, current - Math.floor(showCount / 2));
@@ -396,17 +397,17 @@ export function WinningRegion() {
   const { data: roundsData, loading: roundsLoading, fetchRounds } = useWinningStoreRounds();
 
   useEffect(() => {
-    fetchSummary();
-  }, [fetchSummary]);
+    fetchSummary(selectedCount);
+  }, [fetchSummary, selectedCount]);
 
   useEffect(() => {
-    fetchRanking(showAllTop ? 10 : TOP_N);
-  }, [fetchRanking, showAllTop]);
+    fetchRanking(showAllTop ? 10 : TOP_N, selectedCount);
+  }, [fetchRanking, showAllTop, selectedCount]);
 
   useEffect(() => {
     // API page is 0-indexed
-    fetchRounds(page - 1, PAGE_SIZE, selectedRegion, searchedRound);
-  }, [fetchRounds, page, selectedRegion, searchedRound]);
+    fetchRounds(page - 1, PAGE_SIZE, selectedRegion, searchedRound, selectedCount);
+  }, [fetchRounds, page, selectedRegion, searchedRound, selectedCount]);
 
   const handleRegionClick = (region: string) => {
     if (selectedRegion === region) {
@@ -455,9 +456,21 @@ export function WinningRegion() {
       )}
 
       {/* ① 페이지 헤더 */}
-      <div className="flex items-center gap-2">
-        <MapPin className="w-6 h-6 text-rose-500" />
-        <h2 className="text-xl sm:text-2xl font-black text-gray-800">당첨 지역</h2>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <MapPin className="w-6 h-6 text-teal-500" />
+          <h2 className="text-xl sm:text-2xl font-black text-gray-800">당첨 지역</h2>
+        </div>
+        <select
+          value={selectedCount}
+          onChange={(e) => setSelectedCount(Number(e.target.value))}
+          className="text-xs sm:text-sm font-bold border-gray-200 text-teal-700 bg-teal-50/50 rounded-xl px-3 py-1.5 focus:border-teal-500 focus:ring focus:ring-teal-200 focus:ring-opacity-50"
+        >
+          <option value={20}>최근 20회차</option>
+          <option value={50}>최근 50회차</option>
+          <option value={100}>최근 100회차</option>
+          <option value={0}>역대 전체 (누적)</option>
+        </select>
       </div>
 
       {/* ② 히어로 배너 */}
@@ -467,7 +480,7 @@ export function WinningRegion() {
           <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/10 rounded-full translate-y-1/3 -translate-x-1/3" />
           <div className="relative z-10">
             <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm text-white text-xs font-bold rounded-full mb-3">
-              전국 당첨 현황
+              전국 당첨 현황 {selectedCount === 0 ? '· 전체 (누적)' : `· 최근 ${selectedCount}회차`}
             </span>
             <div className="grid grid-cols-3 gap-3 sm:gap-6">
               <div>
