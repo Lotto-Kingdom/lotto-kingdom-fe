@@ -1,19 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useLottoHistory } from '../hooks/useLottoHistory';
-import { getLottoNumberColor } from '../utils/lottoGenerator';
-import { Sparkles, TrendingUp, BarChart2, Trophy, AlertCircle, RefreshCw, History } from 'lucide-react';
+import { Sparkles, BarChart2, Trophy, AlertCircle, History } from 'lucide-react';
 import { LottoHistory } from './LottoHistory';
-
-// ── 번호 공 ──────────────────────────────────────────────
-function Ball({ n, size = 'md', dim = false }: { n: number; size?: 'sm' | 'md' | 'lg'; dim?: boolean }) {
-  const color = getLottoNumberColor(n);
-  const sz = size === 'sm' ? 'w-7 h-7 text-xs' : size === 'lg' ? 'w-10 h-10 text-sm font-black' : 'w-8 h-8 text-xs';
-  return (
-    <span className={`${sz} ${color} ${dim ? 'opacity-30' : ''} rounded-full flex items-center justify-center text-white font-bold shadow-sm flex-shrink-0`}>
-      {n}
-    </span>
-  );
-}
 
 // ── 섹션 카드 래퍼 ───────────────────────────────────────
 function Section({ title, icon: Icon, children, accent = 'blue' }: {
@@ -21,14 +9,11 @@ function Section({ title, icon: Icon, children, accent = 'blue' }: {
 }) {
   const accents: Record<string, string> = {
     blue: 'from-blue-500 to-indigo-500',
-    purple: 'from-purple-500 to-pink-500',
     orange: 'from-orange-400 to-amber-500',
-    green: 'from-emerald-500 to-teal-500',
-    red: 'from-rose-500 to-pink-500',
   };
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className={`bg-gradient-to-r ${accents[accent]} px-5 py-3 flex items-center gap-2`}>
+      <div className={`bg-gradient-to-r ${accents[accent] || 'from-blue-500 to-indigo-500'} px-5 py-3 flex items-center gap-2`}>
         <Icon className="w-4 h-4 text-white" />
         <h2 className="text-white font-bold text-sm">{title}</h2>
       </div>
@@ -37,38 +22,27 @@ function Section({ title, icon: Icon, children, accent = 'blue' }: {
   );
 }
 
-// ── 추천 번호 생성 로직 ──────────────────────────────────
-function generateRecommended(freq: [number, number][], count = 6): number[] {
-  if (freq.length === 0) {
-    const nums = Array.from({ length: 45 }, (_, i) => i + 1);
-    return nums.sort(() => Math.random() - 0.5).slice(0, 6).sort((a, b) => a - b);
-  }
-  // 상위 빈도 기반 가중치 추출
-  const total = freq.reduce((s, [, f]) => s + f, 0);
-  const weighted: number[] = [];
-  for (const [num, f] of freq) {
-    const weight = Math.max(1, Math.round((f / total) * 100));
-    for (let i = 0; i < weight; i++) weighted.push(num);
-  }
-  const picked = new Set<number>();
-  let tries = 0;
-  while (picked.size < count && tries < 1000) {
-    const idx = Math.floor(Math.random() * weighted.length);
-    picked.add(weighted[idx]);
-    tries++;
-  }
-  // 부족하면 채우기
-  while (picked.size < count) {
-    picked.add(Math.floor(Math.random() * 45) + 1);
-  }
-  return Array.from(picked).sort((a, b) => a - b);
-}
-
 // ── 메인 컴포넌트 ────────────────────────────────────────
 export function MyAnalysis() {
-  const { history, deleteEntry, clearHistory, updateEntry } = useLottoHistory();
-  const [recommends, setRecommends] = useState<number[][]>([]);
-  const [recGenerated, setRecGenerated] = useState(false);
+  let { history, deleteEntry, clearHistory, updateEntry } = useLottoHistory();
+
+  // UI 확인을 위한 임시 목데이터 주입
+  if (history.length === 0) {
+      const now = Date.now();
+      const d = new Date().toISOString();
+      history = [
+          { id: 'm1', numbers: [3, 14, 22, 28, 33, 41], timestamp: now - 100000, date: d, round: 1102 },
+          { id: 'm2', numbers: [7, 12, 18, 25, 34, 45], timestamp: now - 200000, date: d, round: 1101 },
+          { id: 'm3', numbers: [2, 15, 22, 38, 41, 44], timestamp: now - 300000, date: d, round: 1099, winningInfo: { rank: 1, matchCount: 6, prize: 2130000000, matchedNumbers: [2, 15, 22, 38, 41, 44] } },
+          { id: 'm4', numbers: [11, 22, 33, 34, 35, 36], timestamp: now - 400000, date: d, round: 1100, winningInfo: { rank: 3, matchCount: 5, prize: 1540000, matchedNumbers: [11, 22, 33, 34, 35] } },
+          { id: 'm5', numbers: [5, 10, 15, 20, 25, 30], timestamp: now - 500000, date: d, round: 1100 },
+          { id: 'm6', numbers: [8, 16, 24, 32, 40, 42], timestamp: now - 600000, date: d, round: 1101, winningInfo: { rank: 5, matchCount: 3, prize: 5000, matchedNumbers: [8, 16, 24] } },
+          { id: 'm7', numbers: [1, 2, 3, 4, 15, 22], timestamp: now - 700000, date: d, round: 1101 },
+          { id: 'm8', numbers: [19, 21, 33, 38, 42, 45], timestamp: now - 800000, date: d, round: 1098 },
+          { id: 'm9', numbers: [5, 6, 7, 18, 28, 38], timestamp: now - 900000, date: d, round: 1102 },
+          { id: 'm10', numbers: [13, 23, 24, 35, 41, 43], timestamp: now - 1000000, date: d, round: 1102, winningInfo: { rank: 4, matchCount: 4, prize: 50000, matchedNumbers: [13, 23, 35, 43] } },
+      ];
+  }
 
   const hasData = history.length > 0;
 
@@ -81,34 +55,6 @@ export function MyAnalysis() {
     for (const n of allNums) map.set(n, (map.get(n) ?? 0) + 1);
     return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
   }, [allNums]);
-
-  // 홀짝 분석
-  const oddEven = useMemo(() => {
-    const odd = allNums.filter(n => n % 2 !== 0).length;
-    const even = allNums.length - odd;
-    const oddPct = allNums.length ? Math.round((odd / allNums.length) * 100) : 50;
-    return { odd, even, oddPct };
-  }, [allNums]);
-
-  // 구간별 분포
-  const zones = useMemo(() => {
-    const z = [0, 0, 0, 0, 0];
-    for (const n of allNums) {
-      if (n <= 10) z[0]++;
-      else if (n <= 20) z[1]++;
-      else if (n <= 30) z[2]++;
-      else if (n <= 40) z[3]++;
-      else z[4]++;
-    }
-    return z;
-  }, [allNums]);
-
-  const zoneLabels = ['1–10', '11–20', '21–30', '31–40', '41–45'];
-  const zoneColors = ['bg-yellow-400', 'bg-blue-500', 'bg-red-500', 'bg-gray-500', 'bg-green-500'];
-
-  // 합계 분포
-  const sums = useMemo(() => history.map(e => e.numbers.reduce((s, n) => s + n, 0)), [history]);
-  const avgSum = useMemo(() => sums.length ? Math.round(sums.reduce((s, v) => s + v, 0) / sums.length) : 0, [sums]);
 
   // 당첨 통계 (winningInfo 기반)
   const winStats = useMemo(() => {
@@ -124,17 +70,6 @@ export function MyAnalysis() {
     return { ranked, rankCount, totalPrize };
   }, [history]);
 
-  // 추천 번호 생성
-  const handleGenerate = () => {
-    const recs: number[][] = [];
-    for (let i = 0; i < 5; i++) recs.push(generateRecommended(freq));
-    setRecommends(recs);
-    setRecGenerated(true);
-  };
-
-  const maxFreq = freq[0]?.[1] ?? 1;
-  const maxZone = Math.max(...zones, 1);
-
   const rankLabels = ['1등', '2등', '3등', '4등', '5등'];
   const rankColors = ['text-yellow-600', 'text-gray-500', 'text-amber-700', 'text-blue-500', 'text-gray-500'];
   const rankBg = ['bg-yellow-50 border-yellow-200', 'bg-gray-50 border-gray-200', 'bg-amber-50 border-amber-200', 'bg-blue-50 border-blue-200', 'bg-gray-50 border-gray-200'];
@@ -147,11 +82,11 @@ export function MyAnalysis() {
         </div>
         <h2 className="text-2xl font-black text-gray-800 mb-3">아직 생성한 번호가 없어요</h2>
         <p className="text-gray-500 text-sm leading-relaxed">
-          홈에서 로또 번호를 생성하면<br />여기서 패턴 분석과 추천 번호를 확인할 수 있어요.
+          홈에서 로또 번호를 생성하면<br />여기서 패턴 분석과 당첨 내역을 확인할 수 있어요.
         </p>
         <div className="mt-6 flex items-center justify-center gap-2 text-xs text-gray-400">
           <AlertCircle className="w-4 h-4" />
-          <span>번호를 생성하면 자동으로 분석됩니다</span>
+          <span>번호를 생성하면 자동으로 등록됩니다</span>
         </div>
       </div>
     );
@@ -159,7 +94,6 @@ export function MyAnalysis() {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
-
       {/* ── 히어로 요약 ─────────────────────────────── */}
       <div className="bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-500 rounded-2xl p-6 text-white shadow-lg">
         <div className="flex items-center gap-2 mb-4">
@@ -181,7 +115,7 @@ export function MyAnalysis() {
         </div>
       </div>
 
-      {/* ── 전체 번호 생성/당첨 내역 (Moved here!) ── */}
+      {/* ── 전체 생성/당첨 내역 ── */}
       <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-4 sm:p-6 lg:p-8">
         <h3 className="text-lg sm:text-2xl font-black text-gray-800 flex items-center gap-2 mb-6">
           <History className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" />
@@ -200,121 +134,7 @@ export function MyAnalysis() {
         </div>
       </div>
 
-      {/* ── 그리드: 빈도 + 홀짝 ─────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-        {/* 자주 생성한 번호 TOP 10 */}
-        <Section title="자주 생성한 번호 TOP 10" icon={TrendingUp} accent="blue">
-          <div className="space-y-2">
-            {freq.slice(0, 10).map(([num, cnt], i) => (
-              <div key={num} className="flex items-center gap-3">
-                <span className="text-xs text-gray-400 w-4 text-right">{i + 1}</span>
-                <Ball n={num} size="sm" />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-xs text-gray-500">{cnt}회</span>
-                    <span className="text-xs text-gray-400">{Math.round((cnt / maxFreq) * 100)}%</span>
-                  </div>
-                  <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${getLottoNumberColor(num)} rounded-full transition-all`}
-                      style={{ width: `${(cnt / maxFreq) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-            {freq.length === 0 && <p className="text-sm text-gray-400 text-center py-4">데이터 없음</p>}
-          </div>
-        </Section>
-
-        {/* 홀짝 & 구간 분포 */}
-        <div className="space-y-6">
-          {/* 홀짝 */}
-          <Section title="홀수 / 짝수 비율" icon={BarChart2} accent="purple">
-            <div className="space-y-3">
-              <div>
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
-                  <span>홀수 {oddEven.odd}개</span>
-                  <span>짝수 {oddEven.even}개</span>
-                </div>
-                <div className="h-5 bg-gray-100 rounded-full overflow-hidden flex">
-                  <div
-                    className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all"
-                    style={{ width: `${oddEven.oddPct}%` }}
-                  />
-                  <div
-                    className="h-full bg-gradient-to-r from-blue-400 to-cyan-400 transition-all"
-                    style={{ width: `${100 - oddEven.oddPct}%` }}
-                  />
-                </div>
-                <div className="flex justify-between text-xs mt-1">
-                  <span className="text-purple-600 font-bold">{oddEven.oddPct}%</span>
-                  <span className="text-blue-500 font-bold">{100 - oddEven.oddPct}%</span>
-                </div>
-              </div>
-            </div>
-          </Section>
-
-          {/* 구간 분포 */}
-          <Section title="번호 구간 분포" icon={BarChart2} accent="orange">
-            <div className="space-y-2">
-              {zones.map((cnt, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500 w-12 flex-shrink-0">{zoneLabels[i]}</span>
-                  <div className="flex-1 h-4 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${zoneColors[i]} rounded-full transition-all`}
-                      style={{ width: `${(cnt / maxZone) * 100}%` }}
-                    />
-                  </div>
-                  <span className="text-xs text-gray-500 w-6 text-right">{cnt}</span>
-                </div>
-              ))}
-            </div>
-          </Section>
-        </div>
-      </div>
-
-      {/* ── 합계 분포 ────────────────────────────────── */}
-      <Section title="번호 합계 분포" icon={BarChart2} accent="green">
-        <div className="flex items-end gap-1 h-24 mb-3">
-          {(() => {
-            // 구간별 카운트: 50~250 범위를 10구간
-            const buckets = Array(20).fill(0);
-            const minS = 21, maxS = 279, step = (maxS - minS) / 20;
-            for (const s of sums) {
-              const idx = Math.min(19, Math.floor((s - minS) / step));
-              buckets[Math.max(0, idx)]++;
-            }
-            const bMax = Math.max(...buckets, 1);
-            return buckets.map((cnt, i) => {
-              const from = Math.round(minS + i * step);
-              const to = Math.round(minS + (i + 1) * step);
-              const highlight = from <= avgSum && avgSum < to;
-              return (
-                <div
-                  key={i}
-                  className="flex-1 group relative cursor-default"
-                  title={`${from}~${to}: ${cnt}회`}
-                >
-                  <div
-                    className={`w-full rounded-t transition-all ${highlight ? 'bg-emerald-500' : 'bg-emerald-200 group-hover:bg-emerald-400'}`}
-                    style={{ height: `${(cnt / bMax) * 100}%` }}
-                  />
-                </div>
-              );
-            });
-          })()}
-        </div>
-        <div className="flex items-center justify-between text-xs text-gray-500">
-          <span>합계 최소: {sums.length ? Math.min(...sums) : '-'}</span>
-          <span className="text-emerald-600 font-bold">평균 합계: {avgSum}</span>
-          <span>합계 최대: {sums.length ? Math.max(...sums) : '-'}</span>
-        </div>
-      </Section>
-
-      {/* ── 당첨 기록 ────────────────────────────────── */}
+      {/* ── 당첨 기록 요약 ────────────────────────────────── */}
       <Section title="당첨 기록 요약" icon={Trophy} accent="orange">
         {winStats.ranked.length === 0 ? (
           <div className="text-center py-6">
@@ -343,45 +163,6 @@ export function MyAnalysis() {
           </div>
         )}
       </Section>
-
-      {/* ── 패턴 기반 추천 번호 ──────────────────────── */}
-      <Section title="내 패턴 기반 추천 번호" icon={Sparkles} accent="purple">
-        <div className="space-y-4">
-          <div className="bg-purple-50 border border-purple-100 rounded-xl p-4 text-sm text-purple-700 leading-relaxed">
-            <p className="font-bold mb-1">어떻게 추천하나요?</p>
-            <p className="text-xs text-purple-600">
-              내가 자주 생성한 번호에 가중치를 두어 {history.length}세트의 생성 패턴을 반영한 번호 조합을 만들어드려요.
-              당첨을 보장하지 않으며, 재미 요소로만 활용해 주세요. 🎲
-            </p>
-          </div>
-
-          <button
-            onClick={handleGenerate}
-            className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold hover:opacity-90 active:scale-95 transition-all shadow-md"
-          >
-            <RefreshCw className="w-4 h-4" />
-            {recGenerated ? '추천 번호 다시 생성' : '추천 번호 5세트 생성'}
-          </button>
-
-          {recommends.length > 0 && (
-            <div className="space-y-3 mt-2">
-              {recommends.map((nums, i) => (
-                <div key={i} className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3">
-                  <span className="text-xs text-gray-400 font-bold w-4">{i + 1}</span>
-                  <div className="flex gap-1.5 flex-wrap">
-                    {nums.map(n => <Ball key={n} n={n} size="md" />)}
-                  </div>
-                </div>
-              ))}
-              <p className="text-xs text-gray-400 text-center">※ 버튼을 누를 때마다 새로운 조합이 생성됩니다</p>
-            </div>
-          )}
-        </div>
-      </Section>
-
-
-
     </div>
   );
 }
-
