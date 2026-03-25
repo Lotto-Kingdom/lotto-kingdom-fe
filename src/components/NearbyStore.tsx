@@ -1,6 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
-import { Search, MapPin, Trophy, X, Store as StoreIcon, Check, Copy, Star, Award, TrendingUp, Hash } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { Search, MapPin, Trophy, X, Store as StoreIcon, Check, Copy, Star, Award, TrendingUp, Hash, Loader2, Navigation, RefreshCw } from 'lucide-react';
 import { Store } from '../utils/lottoData';
+import { useNearbyStores } from '../hooks/useNearbyStore';
+import { useWinningStoreDetail } from '../hooks/useWinningRegion';
 
 declare global {
   interface Window {
@@ -79,7 +81,15 @@ function NearbyStoreDetailModal({
     };
 
     const mapRef = useRef<HTMLDivElement>(null);
-    const relatedRounds: any[] = [];
+    const { data: storeDetail, fetchDetail, loading } = useWinningStoreDetail();
+
+    useEffect(() => {
+        if (store.id) {
+            fetchDetail(store.id);
+        }
+    }, [store.id, fetchDetail]);
+
+    const relatedRounds = storeDetail?.winRounds || [];
 
     useEffect(() => {
         if (mapRef.current && window.kakao && window.kakao.maps) {
@@ -195,26 +205,33 @@ function NearbyStoreDetailModal({
                         </div>
 
                         {/* 1등 당첨 회차 */}
-                        {relatedRounds.length > 0 && (
+                        {(relatedRounds.length > 0 || loading) && (
                             <div>
                                 <h4 className="font-black text-gray-800 text-sm mb-2.5 flex items-center gap-1.5">
                                     <Hash className="w-4 h-4 text-purple-500" />
                                     1등 당첨 회차
                                 </h4>
-                                <div className="flex flex-wrap gap-2">
-                                    {relatedRounds.map((r) => (
-                                        <div key={r.drwNo} className="flex items-center gap-1.5 bg-white border border-gray-100 rounded-xl px-3 py-1.5 shadow-sm">
-                                            <span className="text-xs font-black text-gray-700">{r.drwNo}회</span>
-                                            <span className="text-[10px] text-gray-400">{r.drwNoDate}</span>
-                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${r.method === 'auto'
-                                                ? 'bg-emerald-50 text-emerald-600'
-                                                : 'bg-purple-50 text-purple-600'
-                                                }`}>
-                                                {r.method === 'auto' ? '자동' : '수동'}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
+                                {loading ? (
+                                    <div className="flex items-center gap-2 py-4">
+                                        <Loader2 className="w-4 h-4 animate-spin text-purple-500" />
+                                        <span className="text-xs text-gray-500">당첨 회차를 불러오는 중입니다...</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-wrap gap-2">
+                                        {relatedRounds.map((r, i) => (
+                                            <div key={`${r.drwNo}-${i}`} className="flex items-center gap-1.5 bg-white border border-gray-100 rounded-xl px-3 py-1.5 shadow-sm hover:border-purple-200 transition-colors">
+                                                <span className="text-xs font-black text-gray-700">{r.drwNo}회</span>
+                                                <span className="text-[10px] text-gray-400">{r.drwNoDate || ''}</span>
+                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${r.method === 'auto'
+                                                    ? 'bg-emerald-50 text-emerald-600'
+                                                    : 'bg-purple-50 text-purple-600'
+                                                    }`}>
+                                                    {r.method === 'auto' ? '자동' : '수동'}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
@@ -226,47 +243,165 @@ function NearbyStoreDetailModal({
 
 export function NearbyStore() {
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedQuery, setDebouncedQuery] = useState('');
     const [filterOnlyHot, setFilterOnlyHot] = useState(false);
     const [sortBy, setSortBy] = useState<'distance' | 'wins'>('distance');
-    const [isSheetOpen, setIsSheetOpen] = useState(true); // 모바일 바텀시트 열림 상태
+    const [isSheetOpen, setIsSheetOpen] = useState(true);
     const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+    const [page, setPage] = useState(0);
     const mapRef = useRef<HTMLDivElement>(null);
+    
+    const [userPos, setUserPos] = useState<{lat: number, lng: number} | null>(null);
+    const [searchPos, setSearchPos] = useState<{lat: number, lng: number} | null>(null);
+    const mapInstanceRef = useRef<any>(null);
+    const markersRef = useRef<any[]>([]);
+
+    const { data, loading, fetchNearbyStores } = useNearbyStores();
 
     useEffect(() => {
-        const initMap = (lat: number, lng: number) => {
-            if (mapRef.current && window.kakao && window.kakao.maps) {
-                window.kakao.maps.load(() => {
-                    if (mapRef.current) {
-                        mapRef.current.innerHTML = '';
-                    }
-                    const position = new window.kakao.maps.LatLng(lat, lng);
-                    const options = { center: position, level: 5 };
-                    const map = new window.kakao.maps.Map(mapRef.current, options);
-                    
-                    // 내 위치 마커
-                    const marker = new window.kakao.maps.Marker({ position });
-                    marker.setMap(map);
-                });
-            }
-        };
+        const timer = setTimeout(() => setDebouncedQuery(searchQuery), 500);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
 
+    useEffect(() => {
+        setPage(0);
+    }, [debouncedQuery, filterOnlyHot, sortBy]);
+
+    useEffect(() => {
+        if (!searchPos) return;
+        fetchNearbyStores({
+            lat: searchPos.lat,
+            lng: searchPos.lng,
+            keyword: debouncedQuery,
+            onlyHot: filterOnlyHot,
+            sort: sortBy,
+            page: page,
+            size: 20
+        }, page > 0);
+    }, [searchPos, debouncedQuery, filterOnlyHot, sortBy, page, fetchNearbyStores]);
+
+    useEffect(() => {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    initMap(position.coords.latitude, position.coords.longitude);
+                    const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
+                    setUserPos(pos);
+                    setSearchPos(pos);
                 },
                 () => {
-                    // 카카오 회사 (제주)
-                    initMap(33.450701, 126.570667);
+                    const pos = { lat: 33.450701, lng: 126.570667 };
+                    setUserPos(pos);
+                    setSearchPos(pos);
                 }
             );
         } else {
-            initMap(33.450701, 126.570667);
+            const pos = { lat: 33.450701, lng: 126.570667 };
+            setUserPos(pos);
+            setSearchPos(pos);
         }
     }, []);
 
-    // 필터 연산 (임시 데이터 제거에 따라 빈 배열)
-    const filteredStores: Store[] = [];
+    // 맵 초기화
+    useEffect(() => {
+        if (!mapInstanceRef.current && userPos && mapRef.current && window.kakao && window.kakao.maps) {
+            window.kakao.maps.load(() => {
+                if (mapRef.current) {
+                    mapRef.current.innerHTML = '';
+                }
+                const position = new window.kakao.maps.LatLng(userPos.lat, userPos.lng);
+                const options = { center: position, level: 5 };
+                mapInstanceRef.current = new window.kakao.maps.Map(mapRef.current, options);
+                const userOverlayContent = `
+                    <div style="position: relative; display: flex; flex-direction: column; align-items: center; transform: translate(0, -100%);">
+                        <div style="background-color: #3b82f6; color: white; padding: 4px 10px; border-radius: 9999px; font-weight: 800; font-size: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 2px solid white; white-space: nowrap;">
+                            내 위치
+                        </div>
+                        <div style="width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid #3b82f6; margin-top: -1px;"></div>
+                    </div>
+                `;
+                const userWrapper = document.createElement('div');
+                userWrapper.innerHTML = userOverlayContent;
+                
+                const userOverlay = new window.kakao.maps.CustomOverlay({
+                    position: position,
+                    content: userWrapper,
+                    yAnchor: 0.1
+                });
+                userOverlay.setMap(mapInstanceRef.current);
+            });
+        }
+    }, [userPos]);
+
+    const filteredStores: Store[] = useMemo(() => {
+        return data?.content.map(item => ({
+            id: item.storeId,
+            name: item.storeName,
+            address: item.address,
+            lat: item.latitude,
+            lng: item.longitude,
+            distance: item.distance,
+            isHot: item.isHot,
+            wins: {
+                first: item.rank1Count,
+                second: item.rank2Count,
+                third: item.rank3Count
+            }
+        })) || [];
+    }, [data?.content]);
+
+    // 마커 업데이트
+    useEffect(() => {
+        if (!mapInstanceRef.current || !window.kakao || !window.kakao.maps) return;
+
+        markersRef.current.forEach(m => m.setMap(null));
+        markersRef.current = [];
+
+        filteredStores.forEach(store => {
+            if (store.lat && store.lng) {
+                const position = new window.kakao.maps.LatLng(store.lat, store.lng);
+                
+                let overlayContent = '';
+                if (store.isHot) {
+                    overlayContent = `
+                        <div style="position: relative; display: flex; flex-direction: column; align-items: center; transform: translate(0, -100%); padding-bottom: 8px; z-index: 20;">
+                            <div style="white-space: nowrap; background: linear-gradient(to right, #ea580c, #ef4444); color: white; font-size: 12px; font-weight: 900; padding: 4px 10px; border-radius: 9999px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4); border: 1.5px solid white; z-index: 20; display: flex; align-items: center; gap: 4px; pointer-events: none;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fef08a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
+                                1등 ${store.wins.first}번
+                            </div>
+                            <svg width="42" height="42" viewBox="0 0 24 24" fill="#ef4444" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); margin-top: -6px; pointer-events: none;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3" fill="white" stroke="none"></circle></svg>
+                            <div style="background: white; color: #111827; font-size: 13px; font-weight: 900; padding: 4px 8px; border-radius: 8px; margin-top: 2px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); white-space: nowrap; border: 1.5px solid #fca5a5; pointer-events: none;">
+                                ${store.name}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    overlayContent = `
+                        <div style="position: relative; display: flex; flex-direction: column; align-items: center; transform: translate(0, -100%); z-index: 10;">
+                            <svg width="36" height="36" viewBox="0 0 24 24" fill="#3b82f6" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.25)); pointer-events: none;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3" fill="white" stroke="none"></circle></svg>
+                            <div style="background: white; color: #1f2937; font-size: 12px; font-weight: 800; padding: 4px 8px; border-radius: 8px; margin-top: 2px; box-shadow: 0 4px 8px rgba(0,0,0,0.15); white-space: nowrap; border: 1px solid #d1d5db; pointer-events: none;">
+                                ${store.name}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = overlayContent;
+                wrapper.style.cursor = 'pointer';
+                wrapper.onclick = () => {
+                    setSelectedStore(store);
+                };
+
+                const overlay = new window.kakao.maps.CustomOverlay({
+                    position: position,
+                    content: wrapper,
+                    yAnchor: 0.1
+                });
+                overlay.setMap(mapInstanceRef.current);
+                markersRef.current.push(overlay);
+            }
+        });
+    }, [filteredStores]);
 
     return (
         <div className="fixed inset-0 top-[64px] sm:top-[80px] z-40 flex bg-gray-50 overflow-hidden">
@@ -304,7 +439,7 @@ export function NearbyStore() {
                 </div>
 
                 {/* 하단 바텀시트 (Mobile) / 리스트 패널 (PC) */}
-                <div className={`flex-1 flex flex-col min-h-0 pointer-events-auto bg-white 
+                <div className={`flex-none lg:flex-1 flex flex-col min-h-0 pointer-events-auto bg-white 
                     mt-auto rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.15)] 
                     lg:mt-0 lg:rounded-none lg:shadow-none lg:relative
                     h-[55vh] lg:h-auto transition-transform duration-300 ease-in-out
@@ -342,7 +477,19 @@ export function NearbyStore() {
                     {/* 스크롤 가능한 리스트 */}
                     <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-gray-50/50 lg:bg-transparent">
                         {filteredStores.map(store => (
-                            <div key={store.id} className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center gap-3 sm:gap-4 hover:border-blue-300 hover:shadow-md transition-all group cursor-pointer">
+                            <div 
+                                key={store.id} 
+                                className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center gap-3 sm:gap-4 hover:border-blue-300 hover:shadow-md transition-all group cursor-pointer"
+                                onClick={() => {
+                                    if (mapInstanceRef.current && window.kakao && window.kakao.maps) {
+                                        const moveLatLon = new window.kakao.maps.LatLng(store.lat, store.lng);
+                                        mapInstanceRef.current.panTo(moveLatLon);
+                                        if (window.innerWidth < 1024) {
+                                            setIsSheetOpen(false);
+                                        }
+                                    }
+                                }}
+                            >
                                 <div className="flex-1 min-w-0 space-y-1">
                                     <div className="flex items-center gap-2">
                                         <h4 className="font-bold text-gray-800 text-[15px] sm:text-[17px] truncate leading-tight">{store.name}</h4>
@@ -352,13 +499,15 @@ export function NearbyStore() {
                                     </div>
                                     <p className="text-[12px] sm:text-[13px] text-gray-500 truncate">{store.address}</p>
 
-                                    {/* 명당 뱃지 강조 */}
-                                    {store.isHot && (
+                                    {/* 당첨 내역 뱃지 */}
+                                    {(store.wins.first > 0 || store.wins.second > 0) && (
                                         <div className="flex flex-wrap items-center gap-1.5 pt-2">
-                                            <div className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-black text-white bg-gradient-to-r from-red-600 to-orange-500 px-2 py-1 rounded-md shadow-sm">
-                                                <Trophy className="w-3.5 h-3.5 text-yellow-300" />
-                                                1등 {store.wins.first}회
-                                            </div>
+                                            {store.wins.first > 0 && (
+                                                <div className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-black text-white bg-gradient-to-r from-red-600 to-orange-500 px-2 py-1 rounded-md shadow-sm">
+                                                    <Trophy className="w-3.5 h-3.5 text-yellow-300" />
+                                                    1등 {store.wins.first}회
+                                                </div>
+                                            )}
                                             {store.wins.second > 0 && (
                                                 <div className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold text-orange-800 bg-orange-100 border border-orange-200 px-2 py-1 rounded-md">
                                                     2등 {store.wins.second}회
@@ -395,23 +544,70 @@ export function NearbyStore() {
                             </div>
                         ))}
 
-                        {filteredStores.length === 0 && (
+                        {filteredStores.length === 0 && !loading && (
                             <div className="text-center py-12 text-gray-400 text-sm font-medium flex flex-col items-center gap-2">
                                 <Search className="w-8 h-8 text-gray-300 opacity-50" />
                                 <span>조건에 일치하는 판매점이 없습니다.</span>
                             </div>
+                        )}
+                        {loading && (
+                            <div className="text-center py-12 flex flex-col items-center justify-center">
+                                <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-3" />
+                                <p className="text-gray-500 font-medium text-sm">정보를 불러오는 중...</p>
+                            </div>
+                        )}
+                        {data && data.pageNumber < data.totalPages - 1 && !loading && (
+                            <button
+                                onClick={() => setPage(p => p + 1)}
+                                className="w-full py-3 mt-4 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-sm font-bold text-gray-600 mb-6"
+                            >
+                                더 보기
+                            </button>
                         )}
                     </div>
                 </div>
             </div>
 
             {/* 오른쪽 지도 영역 (PC: 나머지 가득 채움, 모바일: 전체 화면 백그라운드 역할) */}
-            <div ref={mapRef} className="absolute inset-0 z-10 lg:static lg:flex-1 bg-gray-100 overflow-hidden">
+            <div className="absolute inset-0 z-10 lg:relative lg:flex-1 bg-gray-100 overflow-hidden">
+                <div ref={mapRef} className="absolute inset-0 w-full h-full" />
                 {!window.kakao && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 font-medium">
                         지도 로딩 중...
                     </div>
                 )}
+                
+                {/* 오버레이 플로팅 버튼 영역 */}
+                <div className={`absolute z-20 left-1/2 -translate-x-1/2 lg:left-1/2 transition-all duration-300 pointer-events-none flex flex-row lg:flex-row items-center gap-3 w-max
+                    bottom-[calc(55vh+16px)] lg:bottom-auto lg:top-8 
+                    ${!isSheetOpen ? 'translate-y-[calc(55vh-96px)] lg:translate-y-0' : 'translate-y-0'}
+                `}>
+                    <button 
+                        onClick={() => {
+                            if (mapInstanceRef.current) {
+                                const center = mapInstanceRef.current.getCenter();
+                                setSearchPos({ lat: center.getLat(), lng: center.getLng() });
+                            }
+                        }}
+                        className="pointer-events-auto flex items-center gap-2 bg-white text-gray-800 hover:text-blue-600 font-extrabold px-4 py-3 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.15)] border border-gray-100 transition-all hover:shadow-xl active:scale-95 text-[13px] sm:text-sm"
+                    >
+                        <RefreshCw className="w-4 h-4" />
+                        현 지도에서 검색
+                    </button>
+                    <button 
+                        onClick={() => {
+                            if (mapInstanceRef.current && userPos) {
+                                const latlng = new window.kakao.maps.LatLng(userPos.lat, userPos.lng);
+                                mapInstanceRef.current.panTo(latlng);
+                                setSearchPos(userPos);
+                            }
+                        }}
+                        className="pointer-events-auto flex items-center justify-center w-11 h-11 bg-white hover:bg-blue-50 text-blue-600 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.15)] border border-gray-100 transition-all hover:shadow-xl active:scale-95"
+                        title="내 위치로 이동"
+                    >
+                        <Navigation className="w-5 h-5 fill-blue-600/20" />
+                    </button>
+                </div>
             </div>
 
             {/* 4. 스토어 상세 모달 */}
