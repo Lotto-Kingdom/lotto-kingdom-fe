@@ -74,7 +74,7 @@ export function MiniHistory({ history }: MiniHistoryProps) {
                                 </span>
                             </div>
                             <span className="sm:hidden text-[10px] text-gray-400 font-medium">
-                                {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {new Date(entry.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                         </div>
 
@@ -91,7 +91,7 @@ export function MiniHistory({ history }: MiniHistoryProps) {
 
                         <div className="hidden sm:flex flex-col items-end gap-1 flex-shrink-0">
                             <span className="text-[10px] sm:text-xs text-gray-400 font-medium whitespace-nowrap bg-gray-50 px-2.5 py-1 rounded-md">
-                                {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {new Date(entry.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                         </div>
                     </div>

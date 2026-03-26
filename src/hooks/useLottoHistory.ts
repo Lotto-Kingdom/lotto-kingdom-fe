@@ -10,8 +10,8 @@ export function useLottoHistory() {
     const newEntry: LottoNumber = {
       id: crypto.randomUUID(),
       numbers,
-      timestamp: Date.now(),
-      date: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      isBought: false,
       round: getCurrentLottoRound(), // 현재 회차 자동 계산
     };
 
