@@ -9,6 +9,7 @@ export function Header() {
   const [authModal, setAuthModal] = useState<'login' | 'signup' | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const userMenuRefMob = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
@@ -50,7 +51,10 @@ export function Header() {
   // 바깥 클릭 시 드롭다운 닫기
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+      const isOutsideDesktop = !userMenuRef.current || !userMenuRef.current.contains(e.target as Node);
+      const isOutsideMobile = !userMenuRefMob.current || !userMenuRefMob.current.contains(e.target as Node);
+      
+      if (isOutsideDesktop && isOutsideMobile) {
         setUserMenuOpen(false);
       }
     };
@@ -161,17 +165,35 @@ export function Header() {
               </div>
             </div>
             {/* 모바일: 우측 유저 버튼 (로그인 버튼은 BottomNav로 이동) */}
-            <div className="md:hidden">
+            <div className="md:hidden relative" ref={userMenuRefMob}>
               {user && (
-                <button
-                  onClick={() => handleMenuClick('/my-numbers')}
-                  className="flex items-center gap-2 bg-blue-50/80 px-3 py-1.5 rounded-full border border-blue-100 shadow-sm active:scale-95 transition-all"
-                >
-                  <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-[10px] font-bold">
-                    {user.nickname[0].toUpperCase()}
-                  </div>
-                  <span className="text-xs font-black text-blue-700">{user.nickname}</span>
-                </button>
+                <>
+                  <button
+                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    className="flex items-center gap-2 bg-blue-50/80 px-3 py-1.5 rounded-full border border-blue-100 shadow-sm active:scale-95 transition-all"
+                  >
+                    <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-[10px] font-bold">
+                      {user.nickname[0].toUpperCase()}
+                    </div>
+                    <span className="text-xs font-black text-blue-700">{user.nickname}</span>
+                  </button>
+                  {userMenuOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-40 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden animate-slide-up origin-top-right">
+                      <button 
+                        onClick={() => { navigate('/my-numbers'); setUserMenuOpen(false); }} 
+                        className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100 flex items-center gap-2"
+                      >
+                        <User className="w-4 h-4" /> 내 번호
+                      </button>
+                      <button 
+                        onClick={handleLogout} 
+                        className="w-full text-left px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                      >
+                        로그아웃
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
