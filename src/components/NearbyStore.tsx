@@ -446,9 +446,18 @@ export function NearbyStore() {
                     </div>
                 </div>
 
-                <div className={`flex-none lg:flex-1 flex flex-col min-h-0 pointer-events-auto bg-white mt-auto rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.15)] lg:mt-0 lg:rounded-none lg:shadow-none lg:relative h-[55vh] lg:h-auto transition-transform duration-300 ${isSheetOpen ? 'translate-y-0' : 'translate-y-[calc(100%-80px)]'} lg:translate-y-0`}>
-                    <div className="w-full flex justify-center py-3 lg:hidden cursor-pointer" onClick={() => setIsSheetOpen(!isSheetOpen)}><div className="w-12 h-1.5 bg-gray-300 rounded-full" /></div>
-                    <div className="px-5 pb-3 flex items-center justify-between border-b flex-shrink-0">
+                <div className={`flex-none lg:flex-1 flex flex-col min-h-0 pointer-events-auto bg-white mt-auto rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.15)] lg:mt-0 lg:rounded-none lg:shadow-none lg:relative h-[55vh] lg:h-auto transition-transform duration-300 ${isSheetOpen ? 'translate-y-0' : 'translate-y-[calc(100%-120px)]'} lg:translate-y-0`}>
+
+                    {/* 모바일 바텀시트 핸들 */}
+                    <div
+                        className="w-full flex justify-center py-4 lg:hidden cursor-pointer active:bg-gray-50 rounded-t-3xl transition-colors"
+                        onClick={() => setIsSheetOpen(!isSheetOpen)}
+                    >
+                        <div className="w-12 h-1.5 bg-gray-300 rounded-full flex-shrink-0" />
+                    </div>
+
+                    {/* 리스트 헤더 & 정렬 */}
+                    <div className="px-5 pb-3 pt-1 lg:pt-4 flex items-center justify-between border-b border-gray-100 flex-shrink-0">
                         <h3 className="font-bold text-gray-800 text-[15px]">목록 <span className="text-blue-600">{filteredStores.length}</span>개</h3>
                         <div className="flex items-center gap-3">
                             <button onClick={() => { setSortBy('distance'); if(searchPos) handleSearch(searchPos, 0); }} className={`text-[13px] font-bold ${sortBy === 'distance' ? 'text-blue-600' : 'text-gray-400'}`}>거리순</button>
@@ -456,7 +465,9 @@ export function NearbyStore() {
                             <button onClick={() => { setSortBy('wins'); if(searchPos) handleSearch(searchPos, 0); }} className={`text-[13px] font-bold ${sortBy === 'wins' ? 'text-red-500' : 'text-gray-400'}`}>당첨순</button>
                         </div>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-gray-50/50 lg:bg-transparent pb-32 sm:pb-4">
+
+                    {/* 스크롤 가능한 리스트 */}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-gray-50/50 lg:bg-transparent pb-40 sm:pb-4">
                         {filteredStores.map(store => (
                             <div key={store.id} className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center gap-3 hover:border-blue-300 transition-all cursor-pointer" onClick={() => { if (mapInstanceRef.current) mapInstanceRef.current.panTo(new window.kakao.maps.LatLng(store.lat, store.lng)); if (window.innerWidth < 1024) setIsSheetOpen(false); }}>
                                 <div className="flex-1 min-w-0 space-y-1">
