@@ -71,16 +71,16 @@ function DrawCard({ draw, highlight = false }: { draw: WinningDraw; highlight?: 
 
           {/* 1등 당첨자 & 금액 */}
           <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
-            <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg">
+            <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg whitespace-nowrap">
               <Users className="w-3 h-3" />
               1등 {draw.firstPrzwnerCo}명
             </span>
-            <span className="text-xs font-black text-orange-600">
+            <span className="text-xs font-black text-orange-600 whitespace-nowrap">
               {Math.round(draw.firstWinamnt / 100000000).toLocaleString()}억
             </span>
             <button
               onClick={() => setExpanded(!expanded)}
-              className="p-1 rounded-lg hover:bg-gray-100 transition-colors text-gray-400"
+              className="p-1 rounded-lg hover:bg-gray-100 transition-colors text-gray-400 flex-shrink-0"
             >
               {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
@@ -91,17 +91,17 @@ function DrawCard({ draw, highlight = false }: { draw: WinningDraw; highlight?: 
         {expanded && (
           <div className="mt-3 pt-3 border-t border-gray-100 grid grid-cols-2 sm:grid-cols-3 gap-2">
             <div className="bg-amber-50 rounded-xl p-3">
-              <p className="text-xs text-gray-500 mb-0.5">1인당 당첨금</p>
-              <p className="text-sm font-black text-amber-700">
+              <p className="text-xs text-gray-500 mb-0.5 whitespace-nowrap">1인당 당첨금</p>
+              <p className="text-sm font-black text-amber-700 whitespace-nowrap">
                 {draw.firstWinamnt.toLocaleString()}원
               </p>
             </div>
             <div className="bg-emerald-50 rounded-xl p-3">
-              <p className="text-xs text-gray-500 mb-0.5">1등 당첨자</p>
-              <p className="text-sm font-black text-emerald-700">{draw.firstPrzwnerCo}명</p>
+              <p className="text-xs text-gray-500 mb-0.5 whitespace-nowrap">1등 당첨자</p>
+              <p className="text-sm font-black text-emerald-700 whitespace-nowrap">{draw.firstPrzwnerCo}명</p>
             </div>
             <div className="bg-blue-50 rounded-xl p-3 col-span-2 sm:col-span-1">
-              <p className="text-xs text-gray-500 mb-0.5">총 판매금액</p>
+              <p className="text-xs text-gray-500 mb-0.5 whitespace-nowrap">총 판매금액</p>
               <p className="text-sm font-black text-blue-700">
                 {Math.round(draw.totSellamnt / 100000000).toLocaleString()}억원
               </p>
@@ -423,18 +423,18 @@ export function WinningHistory() {
 
               {/* 페이지네이션 */}
               {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-1.5 mt-5">
+                <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 mt-5">
                   <button
                     onClick={() => setPage(1)}
                     disabled={page === 1}
-                    className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    className="p-2 sm:p-2.5 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    className="p-2 sm:p-2.5 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
@@ -476,14 +476,14 @@ export function WinningHistory() {
                   <button
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
-                    className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    className="p-2 sm:p-2.5 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setPage(totalPages)}
                     disabled={page === totalPages}
-                    className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                    className="p-2 sm:p-2.5 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                   >
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>

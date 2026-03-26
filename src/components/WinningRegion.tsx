@@ -99,9 +99,11 @@ function TopStoreCard({
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-0.5">
-            <span className="font-black text-gray-900 text-sm truncate">{store.storeName}</span>
-            <RegionBadge region={store.region} small />
+          <div className="flex items-start justify-between gap-1.5 mb-0.5">
+            <span className="font-black text-gray-900 text-[13px] sm:text-sm leading-snug break-keep line-clamp-2">{store.storeName}</span>
+            <div className="flex-shrink-0 mt-0.5">
+              <RegionBadge region={store.region} small />
+            </div>
           </div>
           <p className="text-[11px] text-gray-400 truncate">{store.district}</p>
 
@@ -124,7 +126,7 @@ function TopStoreCard({
           <p className={`text-xl font-black ${rank === 1 ? 'text-amber-500' : 'text-gray-800'}`}>
             {store.rank1Count}
           </p>
-          <p className="text-[10px] text-gray-400">1등</p>
+          <p className="text-[10px] text-gray-400 whitespace-nowrap">1등</p>
         </div>
       </div>
     </button>
@@ -153,13 +155,13 @@ function RoundRow({
       </span>
       <button
         onClick={() => onStoreClick(round.storeId)}
-        className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0 group-hover:text-blue-600 transition-colors text-left"
+        className="flex items-start sm:items-center gap-1.5 sm:gap-2 flex-1 min-w-0 group-hover:text-blue-600 transition-colors text-left"
       >
-        <Store className="w-4 h-4 text-gray-400 flex-shrink-0 group-hover:text-blue-500" />
-        <span className="font-bold text-gray-800 text-sm truncate group-hover:text-blue-600">
+        <Store className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5 sm:mt-0 group-hover:text-blue-500" />
+        <span className="font-bold text-gray-800 text-[13px] sm:text-sm leading-snug break-keep line-clamp-2 sm:truncate group-hover:text-blue-600">
           {round.storeName}
         </span>
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 mt-0.5 sm:mt-0">
           <RegionBadge region={round.region} small />
         </div>
       </button>
@@ -335,7 +337,7 @@ function StoreDetailModal({
                         </div>
                       </div>
                       <p className="text-2xl font-black text-amber-700">{store.rank1Count}</p>
-                      <p className="text-[10px] text-amber-600 font-semibold mt-0.5">1등 당첨</p>
+                      <p className="text-[10px] text-amber-600 font-semibold mt-0.5 whitespace-nowrap">1등 당첨</p>
                     </div>
                     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-3.5 text-center border border-blue-100">
                       <div className="flex items-center justify-center mb-1.5">
@@ -344,7 +346,7 @@ function StoreDetailModal({
                         </div>
                       </div>
                       <p className="text-2xl font-black text-blue-700">{store.rank2Count}</p>
-                      <p className="text-[10px] text-blue-600 font-semibold mt-0.5">2등 당첨</p>
+                      <p className="text-[10px] text-blue-600 font-semibold mt-0.5 whitespace-nowrap">2등 당첨</p>
                     </div>
                   </div>
                 </div>
@@ -358,10 +360,10 @@ function StoreDetailModal({
                     </h4>
                     <div className="flex flex-wrap gap-2">
                       {store.winRounds.map((r) => (
-                        <div key={r.drwNo} className="flex items-center gap-1.5 bg-white border border-gray-100 rounded-xl px-3 py-1.5 shadow-sm">
-                          <span className="text-xs font-black text-gray-700">{r.drwNo}회</span>
-                          <span className="text-[10px] text-gray-400">{r.drwNoDate}</span>
-                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                        <div key={r.drwNo} className="flex items-center gap-1.5 bg-white border border-gray-100 rounded-xl px-2 sm:px-3 py-1.5 shadow-sm">
+                          <span className="text-xs font-black text-gray-700 whitespace-nowrap">{r.drwNo}회</span>
+                          <span className="text-[10px] text-gray-400 whitespace-nowrap">{r.drwNoDate}</span>
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 flex-shrink-0 rounded-full whitespace-nowrap ${
                             r.method === 'auto'
                               ? 'bg-emerald-50 text-emerald-600'
                               : 'bg-purple-50 text-purple-600'
@@ -811,18 +813,18 @@ export function WinningRegion() {
 
         {/* 페이지네이션 */}
         {!roundsLoading && totalPages > 1 && (
-          <div className="flex items-center justify-center gap-1.5 mt-5">
+          <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-1.5 mt-5">
             <button
               onClick={() => setPage(1)}
               disabled={page === 1}
-              className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              className="p-2 sm:p-2.5 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              className="p-2 sm:p-2.5 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -864,14 +866,14 @@ export function WinningRegion() {
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              className="p-2 sm:p-2.5 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
             <button
               onClick={() => setPage(totalPages)}
               disabled={page === totalPages}
-              className="p-2 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              className="p-2 sm:p-2.5 rounded-xl bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </button>

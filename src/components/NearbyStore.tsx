@@ -116,17 +116,17 @@ function NearbyStoreDetailModal({
                 {/* 모달 헤더 */}
                 <div className={`${c.bg} border-b ${c.border} p-5 flex-shrink-0`}>
                     <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-3">
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${c.badge}`}>
+                        <div className="flex items-start gap-3 min-w-0">
+                            <div className={`w-12 h-12 rounded-2xl flex-shrink-0 flex items-center justify-center shadow-sm ${c.badge}`}>
                                 <StoreIcon className="w-6 h-6 text-white" />
                             </div>
-                            <div>
-                                <h3 className="font-black text-gray-900 text-lg leading-tight">{store.name}</h3>
+                            <div className="min-w-0 flex-1">
+                                <h3 className="font-black text-gray-900 text-lg sm:text-lg text-[16px] leading-tight truncate">{store.name}</h3>
                                 <button
                                     onClick={handleCopyAddress}
-                                    className="flex items-center gap-1.5 mt-0.5 group text-left"
+                                    className="flex items-center gap-1.5 mt-0.5 group text-left max-w-full"
                                 >
-                                    <p className="text-sm text-gray-500 group-hover:text-gray-700 transition-colors">
+                                    <p className="text-sm text-gray-500 group-hover:text-gray-700 transition-colors truncate">
                                         {store.address}
                                     </p>
                                     <span className={`flex-shrink-0 flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-md transition-all ${copied
@@ -181,7 +181,7 @@ function NearbyStoreDetailModal({
                                         </div>
                                     </div>
                                     <p className="text-2xl font-black text-amber-700">{store.wins.first}</p>
-                                    <p className="text-[10px] text-amber-600 font-semibold mt-0.5">1등 당첨</p>
+                                    <p className="text-[10px] text-amber-600 font-semibold mt-0.5 whitespace-nowrap">1등 당첨</p>
                                 </div>
                                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-3.5 text-center border border-blue-100">
                                     <div className="flex items-center justify-center mb-1.5">
@@ -190,7 +190,7 @@ function NearbyStoreDetailModal({
                                         </div>
                                     </div>
                                     <p className="text-2xl font-black text-blue-700">{store.wins.second}</p>
-                                    <p className="text-[10px] text-blue-600 font-semibold mt-0.5">2등 당첨</p>
+                                    <p className="text-[10px] text-blue-600 font-semibold mt-0.5 whitespace-nowrap">2등 당첨</p>
                                 </div>
                                 <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-3.5 text-center border border-emerald-100">
                                     <div className="flex items-center justify-center mb-1.5">
@@ -199,7 +199,7 @@ function NearbyStoreDetailModal({
                                         </div>
                                     </div>
                                     <p className="text-2xl font-black text-emerald-700">{store.wins.third || 0}</p>
-                                    <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">3등 당첨</p>
+                                    <p className="text-[10px] text-emerald-600 font-semibold mt-0.5 whitespace-nowrap">3등 당첨</p>
                                 </div>
                             </div>
                         </div>
@@ -219,10 +219,10 @@ function NearbyStoreDetailModal({
                                 ) : (
                                     <div className="flex flex-wrap gap-2">
                                         {relatedRounds.map((r, i) => (
-                                            <div key={`${r.drwNo}-${i}`} className="flex items-center gap-1.5 bg-white border border-gray-100 rounded-xl px-3 py-1.5 shadow-sm hover:border-purple-200 transition-colors">
-                                                <span className="text-xs font-black text-gray-700">{r.drwNo}회</span>
-                                                <span className="text-[10px] text-gray-400">{r.drwNoDate || ''}</span>
-                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${r.method === 'auto'
+                                            <div key={`${r.drwNo}-${i}`} className="flex items-center gap-1.5 bg-white border border-gray-100 rounded-xl px-2 sm:px-3 py-1.5 shadow-sm hover:border-purple-200 transition-colors">
+                                                <span className="text-[11px] sm:text-xs font-black text-gray-700 whitespace-nowrap">{r.drwNo}회</span>
+                                                <span className="text-[10px] text-gray-400 whitespace-nowrap">{r.drwNoDate || ''}</span>
+                                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${r.method === 'auto'
                                                     ? 'bg-emerald-50 text-emerald-600'
                                                     : 'bg-purple-50 text-purple-600'
                                                     }`}>
@@ -477,13 +477,13 @@ export function NearbyStore() {
                     </div>
 
                     {/* 스크롤 가능한 리스트 */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-gray-50/50 lg:bg-transparent pb-40 sm:pb-4">
+                    <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2.5 sm:space-y-3 custom-scrollbar bg-gray-50/50 lg:bg-transparent pb-40 sm:pb-4">
                         {filteredStores.map(store => (
-                            <div key={store.id} className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center gap-3 hover:border-blue-300 transition-all cursor-pointer" onClick={() => { if (mapInstanceRef.current) mapInstanceRef.current.panTo(new window.kakao.maps.LatLng(store.lat, store.lng)); if (window.innerWidth < 1024) setIsSheetOpen(false); }}>
+                            <div key={store.id} className="bg-white border border-gray-100 rounded-2xl p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3 hover:border-blue-300 transition-all cursor-pointer" onClick={() => { if (mapInstanceRef.current) mapInstanceRef.current.panTo(new window.kakao.maps.LatLng(store.lat, store.lng)); if (window.innerWidth < 1024) setIsSheetOpen(false); }}>
                                 <div className="flex-1 min-w-0 space-y-1">
-                                    <div className="flex items-center gap-2">
-                                        <h4 className="font-bold text-gray-800 text-[15px] truncate">{store.name}</h4>
-                                        <span className="text-[11px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">{store.distance < 1000 ? `${store.distance}m` : `${(store.distance / 1000).toFixed(1)}km`}</span>
+                                    <div className="flex items-start justify-between gap-1.5">
+                                        <h4 className="font-bold text-gray-800 text-[14px] sm:text-[15px] leading-snug break-keep line-clamp-2">{store.name}</h4>
+                                        <span className="text-[10px] sm:text-[11px] font-bold flex-shrink-0 text-gray-500 bg-gray-100 px-1.5 sm:px-2 py-0.5 rounded-md mt-0.5">{store.distance < 1000 ? `${store.distance}m` : `${(store.distance / 1000).toFixed(1)}km`}</span>
                                     </div>
                                     <p className="text-[12px] text-gray-500 truncate">{store.address}</p>
                                     {(store.wins.first > 0 || store.wins.second > 0) && (
@@ -493,7 +493,7 @@ export function NearbyStore() {
                                         </div>
                                     )}
                                 </div>
-                                <button onClick={(e) => { e.stopPropagation(); setSelectedStore(store); }} className="h-9 px-3 bg-gray-50 text-gray-600 rounded-xl font-bold text-xs whitespace-nowrap">상세보기</button>
+                                <button onClick={(e) => { e.stopPropagation(); setSelectedStore(store); }} className="h-8 sm:h-9 px-2.5 sm:px-3 bg-gray-50 text-gray-600 rounded-xl font-bold flex-shrink-0 text-[11px] sm:text-xs whitespace-nowrap">상세보기</button>
                             </div>
                         ))}
                         {data && data.pageNumber < data.totalPages - 1 && !loading && (
