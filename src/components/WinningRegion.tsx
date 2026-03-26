@@ -187,13 +187,31 @@ function StoreDetailModal({
   const [copied, setCopied] = useState(false);
   const { data: store, loading, error, fetchDetail } = useWinningStoreDetail();
   const mapRef = useRef<HTMLDivElement>(null);
+  const [kakaoReady, setKakaoReady] = useState(false);
+
+  useEffect(() => {
+     const checkKakao = () => {
+         if (window.kakao && window.kakao.maps) {
+             setKakaoReady(true);
+             return true;
+         }
+         return false;
+     };
+
+     if (!checkKakao()) {
+         const interval = setInterval(() => {
+             if (checkKakao()) clearInterval(interval);
+         }, 100);
+         return () => clearInterval(interval);
+     }
+  }, []);
 
   useEffect(() => {
     fetchDetail(storeId);
   }, [storeId, fetchDetail]);
 
   useEffect(() => {
-    if (store && mapRef.current && window.kakao && window.kakao.maps) {
+    if (store && mapRef.current && kakaoReady) {
       window.kakao.maps.load(() => {
         if (mapRef.current) {
           mapRef.current.innerHTML = '';
@@ -211,7 +229,7 @@ function StoreDetailModal({
         marker.setMap(map);
       });
     }
-  }, [store]);
+  }, [store, kakaoReady]);
 
   const handleCopyAddress = async (address: string) => {
     try {
@@ -448,10 +466,13 @@ export function WinningRegion() {
 
   return (
     <div className="w-full space-y-4 sm:space-y-6 relative">
-      {/* 글로벌 로딩 표시 */}
-      {(summaryLoading && !summary) && (
-        <div className="absolute inset-0 z-10 bg-white/50 backdrop-blur-sm flex items-center justify-center min-h-[500px] rounded-3xl">
-          <Loader2 className="w-10 h-10 text-purple-500 animate-spin" />
+      {/* 글로벌 로딩 표시 - 처음 진입시에만 살짝 보여줌 */}
+      {(summaryLoading && !summary && !rankingData && !roundsData) && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center min-h-[500px] rounded-3xl pointer-events-none">
+          <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-xl flex flex-col items-center">
+            <Loader2 className="w-10 h-10 text-purple-500 animate-spin mb-3" />
+            <p className="text-gray-500 font-bold">데이터를 불러오는 중...</p>
+          </div>
         </div>
       )}
 

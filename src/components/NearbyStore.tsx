@@ -251,10 +251,14 @@ export function NearbyStore() {
     const [page, setPage] = useState(0);
     const mapRef = useRef<HTMLDivElement>(null);
     
-    const [userPos, setUserPos] = useState<{lat: number, lng: number} | null>(null);
+    const DEFAULT_POS = { lat: 37.5665, lng: 126.9780 };
+    const [userPos, setUserPos] = useState<{lat: number, lng: number}>(DEFAULT_POS);
+    const [realUserPos, setRealUserPos] = useState<{lat: number, lng: number} | null>(null);
     const [searchPos, setSearchPos] = useState<{lat: number, lng: number} | null>(null);
+    const [kakaoReady, setKakaoReady] = useState(false);
     const mapInstanceRef = useRef<any>(null);
     const markersRef = useRef<any[]>([]);
+    const userOverlayRef = useRef<any>(null);
 
     const { data, loading, fetchNearbyStores } = useNearbyStores();
 
@@ -266,6 +270,23 @@ export function NearbyStore() {
     useEffect(() => {
         setPage(0);
     }, [debouncedQuery, filterOnlyHot, sortBy]);
+
+    useEffect(() => {
+        const checkKakao = () => {
+            if (window.kakao && window.kakao.maps) {
+                setKakaoReady(true);
+                return true;
+            }
+            return false;
+        };
+
+        if (!checkKakao()) {
+            const interval = setInterval(() => {
+                if (checkKakao()) clearInterval(interval);
+            }, 100);
+            return () => clearInterval(interval);
+        }
+    }, []);
 
     useEffect(() => {
         if (!searchPos) return;
@@ -287,50 +308,70 @@ export function NearbyStore() {
                     const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
                     setUserPos(pos);
                     setSearchPos(pos);
+                    setRealUserPos(pos);
                 },
-                () => {
-                    const pos = { lat: 33.450701, lng: 126.570667 };
-                    setUserPos(pos);
-                    setSearchPos(pos);
-                }
+                (error) => {
+                    console.warn("Geolocation error:", error);
+                    // 위치 권한 없거나 오류 발생 시 기본 위치(서울시청)로 데이터 조회
+                    setSearchPos(DEFAULT_POS);
+                },
+                { enableHighAccuracy: false, timeout: 5000, maximumAge: Infinity }
             );
         } else {
-            const pos = { lat: 33.450701, lng: 126.570667 };
-            setUserPos(pos);
-            setSearchPos(pos);
+            // 위치 서비스 지원하지 않을 때 기본 위치로 조회
+            setSearchPos(DEFAULT_POS);
         }
     }, []);
 
-    // 맵 초기화
+    // 맵 초기화 (내 위치 오버레이 제거됨 - 아래 효과에서 관리)
     useEffect(() => {
-        if (!mapInstanceRef.current && userPos && mapRef.current && window.kakao && window.kakao.maps) {
+        if (!mapInstanceRef.current && kakaoReady && mapRef.current) {
             window.kakao.maps.load(() => {
                 if (mapRef.current) {
                     mapRef.current.innerHTML = '';
                 }
                 const position = new window.kakao.maps.LatLng(userPos.lat, userPos.lng);
-                const options = { center: position, level: 5 };
+                const options = { center: position, level: 3 };
                 mapInstanceRef.current = new window.kakao.maps.Map(mapRef.current, options);
-                const userOverlayContent = `
-                    <div style="position: relative; display: flex; flex-direction: column; align-items: center; transform: translate(0, -100%);">
-                        <div style="background-color: #3b82f6; color: white; padding: 4px 10px; border-radius: 9999px; font-weight: 800; font-size: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 2px solid white; white-space: nowrap;">
-                            내 위치
-                        </div>
-                        <div style="width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid #3b82f6; margin-top: -1px;"></div>
-                    </div>
-                `;
-                const userWrapper = document.createElement('div');
-                userWrapper.innerHTML = userOverlayContent;
-                
-                const userOverlay = new window.kakao.maps.CustomOverlay({
-                    position: position,
-                    content: userWrapper,
-                    yAnchor: 0.1
-                });
-                userOverlay.setMap(mapInstanceRef.current);
             });
         }
-    }, [userPos]);
+    }, [kakaoReady]);
+
+    // 위치가 결정되면 지도 중심 이동
+    useEffect(() => {
+        if (mapInstanceRef.current && window.kakao && window.kakao.maps) {
+            const moveLatLon = new window.kakao.maps.LatLng(userPos.lat, userPos.lng);
+            mapInstanceRef.current.panTo(moveLatLon);
+        }
+    }, [userPos.lat, userPos.lng]);
+
+    // 내 위치 마커(오버레이) 관리 - 실제 위치가 있을 때만 표시
+    useEffect(() => {
+        if (!mapInstanceRef.current || !realUserPos || !kakaoReady) return;
+
+        if (userOverlayRef.current) {
+            userOverlayRef.current.setMap(null);
+        }
+
+        const position = new window.kakao.maps.LatLng(realUserPos.lat, realUserPos.lng);
+        const userOverlayContent = `
+            <div style="position: relative; display: flex; flex-direction: column; align-items: center; transform: translate(0, -100%);">
+                <div style="background-color: #3b82f6; color: white; padding: 4px 10px; border-radius: 9999px; font-weight: 800; font-size: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 2px solid white; white-space: nowrap;">
+                    내 위치
+                </div>
+                <div style="width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid #3b82f6; margin-top: -1px;"></div>
+            </div>
+        `;
+        const userWrapper = document.createElement('div');
+        userWrapper.innerHTML = userOverlayContent;
+        
+        userOverlayRef.current = new window.kakao.maps.CustomOverlay({
+            position: position,
+            content: userWrapper,
+            yAnchor: 0.1
+        });
+        userOverlayRef.current.setMap(mapInstanceRef.current);
+    }, [realUserPos, kakaoReady]);
 
     const filteredStores: Store[] = useMemo(() => {
         return data?.content.map(item => ({
@@ -351,7 +392,7 @@ export function NearbyStore() {
 
     // 마커 업데이트
     useEffect(() => {
-        if (!mapInstanceRef.current || !window.kakao || !window.kakao.maps) return;
+        if (!mapInstanceRef.current || !kakaoReady) return;
 
         markersRef.current.forEach(m => m.setMap(null));
         markersRef.current = [];
@@ -401,7 +442,7 @@ export function NearbyStore() {
                 markersRef.current.push(overlay);
             }
         });
-    }, [filteredStores]);
+    }, [filteredStores, kakaoReady]);
 
     return (
         <div className="fixed inset-0 top-[64px] sm:top-[80px] z-40 flex bg-gray-50 overflow-hidden">
@@ -571,8 +612,9 @@ export function NearbyStore() {
             {/* 오른쪽 지도 영역 (PC: 나머지 가득 채움, 모바일: 전체 화면 백그라운드 역할) */}
             <div className="absolute inset-0 z-10 lg:relative lg:flex-1 bg-gray-100 overflow-hidden">
                 <div ref={mapRef} className="absolute inset-0 w-full h-full" />
-                {!window.kakao && (
+                {!kakaoReady && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 font-medium">
+                        <Loader2 className="w-6 h-6 animate-spin mb-2" />
                         지도 로딩 중...
                     </div>
                 )}
