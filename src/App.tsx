@@ -67,7 +67,7 @@ function App() {
           <Route path="/region" element={<WinningPage />} />
           <Route path="/amount" element={<WinningAmount />} />
           <Route path="/stats" element={<WinningStats />} />
-          <Route path="/my-stats" element={<MyAnalysis />} />
+          <Route path="/my-numbers" element={<MyAnalysis />} />
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />

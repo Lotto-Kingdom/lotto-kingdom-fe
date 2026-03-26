@@ -131,8 +131,8 @@ export function Header() {
               <div className="w-px h-6 bg-gray-200" />
               <div className="flex items-center gap-4">
                 <button
-                  onClick={() => handleMenuClick('/my-stats')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${location.pathname === '/my-stats' ? 'bg-orange-50 text-orange-600' : 'text-gray-700 hover:bg-orange-50 hover:text-orange-600'}`}
+                  onClick={() => handleMenuClick('/my-numbers')}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${location.pathname === '/my-numbers' ? 'bg-orange-50 text-orange-600' : 'text-gray-700 hover:bg-orange-50 hover:text-orange-600'}`}
                 >
                   <User className="w-5 h-5" />
                   <span className="font-bold">내 번호</span>
@@ -145,6 +145,9 @@ export function Header() {
                     </button>
                     {userMenuOpen && (
                       <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                        <button onClick={() => { navigate('/my-numbers'); setUserMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100 flex items-center gap-2">
+                          <User className="w-4 h-4" /> 내 번호 기록
+                        </button>
                         <button onClick={handleLogout} className="w-full text-left px-4 py-3 text-sm text-red-500 hover:bg-red-50">로그아웃</button>
                       </div>
                     )}
@@ -161,7 +164,7 @@ export function Header() {
             <div className="md:hidden">
               {user && (
                 <button
-                  onClick={() => handleMenuClick('/my-stats')}
+                  onClick={() => handleMenuClick('/my-numbers')}
                   className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm"
                 >
                   {user.nickname[0].toUpperCase()}
