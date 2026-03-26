@@ -243,7 +243,6 @@ function NearbyStoreDetailModal({
 
 export function NearbyStore() {
     const [searchQuery, setSearchQuery] = useState('');
-    const [debouncedQuery, setDebouncedQuery] = useState('');
     const [filterOnlyHot, setFilterOnlyHot] = useState(false);
     const [sortBy, setSortBy] = useState<'distance' | 'wins'>('distance');
     const [isSheetOpen, setIsSheetOpen] = useState(true);
@@ -281,11 +280,6 @@ export function NearbyStore() {
             size: dynamicSize
         }, newPage > 0);
     }, [searchQuery, filterOnlyHot, sortBy, fetchNearbyStores]);
-
-    useEffect(() => {
-        const timer = setTimeout(() => setDebouncedQuery(searchQuery), 500);
-        return () => clearTimeout(timer);
-    }, [searchQuery]);
 
     // 초기 위치 로드 - 1회만 호출
     useEffect(() => {
