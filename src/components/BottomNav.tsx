@@ -65,11 +65,20 @@ export function BottomNav({ onLoginClick }: BottomNavProps) {
 
         {/* 로그인 / 유저 */}
         <button
-          onClick={onLoginClick}
-          className="flex flex-col items-center justify-center gap-1 flex-1 h-full touch-manipulation"
+          onClick={() => {
+            if (user) {
+              navigate('/my-numbers');
+            } else {
+              onLoginClick();
+            }
+          }}
+          className="relative flex flex-col items-center justify-center gap-1 flex-1 h-full touch-manipulation"
         >
           {user ? (
             <>
+              {location.pathname === '/my-numbers' && (
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-blue-500 rounded-full" />
+              )}
               <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-[10px]">
                 {user.nickname[0].toUpperCase()}
               </div>
