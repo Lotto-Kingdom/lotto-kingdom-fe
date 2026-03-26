@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
-
 import { API_BASE_URL } from '../config/api';
+import { apiClient } from '../utils/apiClient';
 
 export interface HotNumber {
   number: number;
@@ -33,12 +33,12 @@ export function useLottoStatistics() {
 
     try {
       const [hotRes, coldRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/lotto/statistics?count=0`, {
+        apiClient(`${API_BASE_URL}/api/lotto/statistics?count=0`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
           signal: controller.signal
         }),
-        fetch(`${API_BASE_URL}/api/lotto/long-absent?threshold=10`, {
+        apiClient(`${API_BASE_URL}/api/lotto/long-absent?threshold=10`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
           signal: controller.signal

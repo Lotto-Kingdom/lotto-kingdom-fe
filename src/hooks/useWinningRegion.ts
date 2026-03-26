@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { API_BASE_URL } from '../config/api';
+import { apiClient } from '../utils/apiClient';
 
 export interface StoreSummary {
   totalRank1Wins: number;
@@ -79,7 +80,7 @@ export function useWinningStoreSummary() {
     setError(null);
     try {
       const url = `${API_BASE_URL}/api/lotto/stores/summary?count=${count}`;
-      const res = await fetch(url);
+      const res = await apiClient(url);
       const result = await res.json();
       if (result.success) {
         setData(result.data);
@@ -107,7 +108,7 @@ export function useWinningStoreRanking() {
     setError(null);
     try {
       const url = `${API_BASE_URL}/api/lotto/stores/ranking?limit=${limit}&count=${count}`;
-      const res = await fetch(url);
+      const res = await apiClient(url);
       const result = await res.json();
       if (result.success) {
         setData(result.data);
@@ -148,7 +149,7 @@ export function useWinningStoreRounds() {
       if (region) params.append('region', region);
       if (drwNo) params.append('drwNo', drwNo.toString());
 
-      const res = await fetch(`${API_BASE_URL}/api/lotto/stores/rounds?${params.toString()}`, {
+      const res = await apiClient(`${API_BASE_URL}/api/lotto/stores/rounds?${params.toString()}`, {
         signal: controller.signal
       });
       const result = await res.json();
@@ -182,7 +183,7 @@ export function useWinningStoreDetail() {
     setError(null);
     setData(null);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/lotto/stores/${storeId}`);
+      const res = await apiClient(`${API_BASE_URL}/api/lotto/stores/${storeId}`);
       const result = await res.json();
       if (result.success) {
         setData(result.data);

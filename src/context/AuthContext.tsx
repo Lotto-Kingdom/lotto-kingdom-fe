@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-
+import { apiClient } from '../utils/apiClient';
 import { API_BASE_URL } from '../config/api';
 
 // ── 타입 ─────────────────────────────────────────────────
@@ -31,7 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const fetchMe = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/auth/me`, { credentials: 'include' });
+        const response = await apiClient(`${API_BASE_URL}/api/auth/me`);
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.data) {
@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const sendVerificationEmail = async (email: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/email/verification/send`, {
+      const response = await apiClient(`${API_BASE_URL}/api/email/verification/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const verifyEmail = async (email: string, code: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/email/verification/verify`, {
+      const response = await apiClient(`${API_BASE_URL}/api/email/verification/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code })
@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signup = async (nickname: string, email: string, password: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/signup`, {
+      const response = await apiClient(`${API_BASE_URL}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nickname, email, password })
@@ -96,11 +96,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string, rememberMe: boolean = false) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      const response = await apiClient(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, rememberMe }),
-        credentials: 'include'
+        body: JSON.stringify({ email, password, rememberMe })
       });
       const result = await response.json();
       if (result.success && result.data) {
@@ -115,9 +114,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      await fetch(`${API_BASE_URL}/api/auth/logout`, {
-        method: 'POST',
-        credentials: 'include'
+      await apiClient(`${API_BASE_URL}/api/auth/logout`, {
+        method: 'POST'
       });
     } catch (e) {
       console.error('Logout failed', e);

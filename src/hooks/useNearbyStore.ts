@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { API_BASE_URL } from '../config/api';
+import { apiClient } from '../utils/apiClient';
 
 export interface NearbyStoreItem {
   storeId: string;
@@ -57,7 +58,7 @@ export function useNearbyStores() {
       if (params.page !== undefined) qs.append('page', params.page.toString());
       if (params.size !== undefined) qs.append('size', params.size.toString());
 
-      const res = await fetch(`${API_BASE_URL}/api/lotto/stores/nearby?${qs.toString()}`, {
+      const res = await apiClient(`${API_BASE_URL}/api/lotto/stores/nearby?${qs.toString()}`, {
         signal: controller.signal
       });
       const result = await res.json();

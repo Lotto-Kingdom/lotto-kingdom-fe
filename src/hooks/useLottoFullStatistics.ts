@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
-
 import { API_BASE_URL } from '../config/api';
+import { apiClient } from '../utils/apiClient';
 
 export interface NumberFrequency {
   number: number;
@@ -82,7 +82,7 @@ export function useLottoFullStatistics() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/lotto/statistics?count=${count}`, {
+      const response = await apiClient(`${API_BASE_URL}/api/lotto/statistics?count=${count}`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         signal: controller.signal

@@ -1,4 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
+import { API_BASE_URL } from '../config/api';
+import { apiClient } from '../utils/apiClient';
 
 export interface WinningDraw {
   drwNo: number;
@@ -10,8 +12,6 @@ export interface WinningDraw {
   firstAccumamnt: number; // 1등 총 당첨금
   totSellamnt: number;    // 총 판매금액
 }
-
-import { API_BASE_URL } from '../config/api';
 
 export function useLottoWinning() {
   const [draws, setDraws] = useState<WinningDraw[]>([]);
@@ -37,7 +37,7 @@ export function useLottoWinning() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/lotto/winning?page=${page}`, {
+      const response = await apiClient(`${API_BASE_URL}/api/lotto/winning?page=${page}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
@@ -91,7 +91,7 @@ export function useLottoWinning() {
     setSearchDraw(null);
     setError(null);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/lotto/winning/${drwNo}`, {
+      const response = await apiClient(`${API_BASE_URL}/api/lotto/winning/${drwNo}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'

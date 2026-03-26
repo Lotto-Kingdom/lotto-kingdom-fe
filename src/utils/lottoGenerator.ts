@@ -1,6 +1,7 @@
 export type GenerationMode = 'hot' | 'cold' | 'balanced' | 'random' | 'ai';
 
 import { API_BASE_URL } from '../config/api';
+import { apiClient } from './apiClient';
 
 /**
  * 1-45 사이의 중복되지 않는 6개의 로또 번호와 1개의 보너스 번호를 생성합니다.
@@ -29,13 +30,12 @@ export async function generateLottoNumbers(
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/lotto/generate`, {
+    const response = await apiClient(`${API_BASE_URL}/api/lotto/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(payload),
-      credentials: 'include'
+      body: JSON.stringify(payload)
     });
 
     const result = await response.json();

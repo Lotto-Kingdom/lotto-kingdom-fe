@@ -74,7 +74,7 @@ function App() {
         </Routes>
       </main>
 
-      <footer className="mt-auto border-t border-gray-200 bg-white/50 backdrop-blur-sm">
+      <footer className="mt-auto border-t border-gray-200 bg-white/50 backdrop-blur-sm pb-24 md:pb-0">
         <div className="container mx-auto px-4 py-6 sm:py-8 max-w-7xl">
           <div className="text-center space-y-3">
             <div className="space-y-1">

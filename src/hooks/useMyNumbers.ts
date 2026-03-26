@@ -1,7 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import { API_BASE_URL } from '../config/api';
+import { apiClient } from '../utils/apiClient';
 
 export interface MyNumbersSummary {
+  // ... (생략)
   totalSets: number;
   totalNumbers: number;
   mostFrequentNumber: {
@@ -48,9 +50,7 @@ export function useMyNumbers() {
   const fetchSummary = useCallback(async () => {
     setSummaryLoading(true);
     try {
-      const resp = await fetch(`${API_BASE_URL}/api/lotto/my-numbers/summary`, {
-        credentials: 'include'
-      });
+      const resp = await apiClient(`${API_BASE_URL}/api/lotto/my-numbers/summary`);
       const json = await resp.json();
       if (json.success) {
         setSummary(json.data);
@@ -66,9 +66,7 @@ export function useMyNumbers() {
   const fetchList = useCallback(async (pageNum = 0) => {
     setLoading(true);
     try {
-      const resp = await fetch(`${API_BASE_URL}/api/lotto/my-numbers?page=${pageNum}&size=20`, {
-        credentials: 'include'
-      });
+      const resp = await apiClient(`${API_BASE_URL}/api/lotto/my-numbers?page=${pageNum}&size=20`);
       const json = await resp.json();
       if (json.success) {
         if (pageNum === 0) {
@@ -94,11 +92,10 @@ export function useMyNumbers() {
     if (isBought === undefined) return;
 
     try {
-      const resp = await fetch(`${API_BASE_URL}/api/lotto/my-numbers/${id}/purchase`, {
+      const resp = await apiClient(`${API_BASE_URL}/api/lotto/my-numbers/${id}/purchase`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isBought }),
-        credentials: 'include'
+        body: JSON.stringify({ isBought })
       });
       const json = await resp.json();
       if (json.success) {
@@ -113,9 +110,8 @@ export function useMyNumbers() {
   const deleteEntry = async (id: number | string) => {
     if (typeof id === 'string') return;
     try {
-      const resp = await fetch(`${API_BASE_URL}/api/lotto/my-numbers/${id}`, { 
-        method: 'DELETE',
-        credentials: 'include'
+      const resp = await apiClient(`${API_BASE_URL}/api/lotto/my-numbers/${id}`, { 
+        method: 'DELETE'
       });
       const json = await resp.json();
       if (json.success) {
@@ -130,9 +126,8 @@ export function useMyNumbers() {
   // 전체 삭제
   const clearAll = async () => {
     try {
-      const resp = await fetch(`${API_BASE_URL}/api/lotto/my-numbers`, { 
-        method: 'DELETE',
-        credentials: 'include'
+      const resp = await apiClient(`${API_BASE_URL}/api/lotto/my-numbers`, { 
+        method: 'DELETE'
       });
       const json = await resp.json();
       if (json.success) {
