@@ -108,11 +108,11 @@ function NearbyStoreDetailModal({
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
+            className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
             onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
         >
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative z-10 w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col animate-slide-up sm:animate-pop">
+            <div className="relative z-10 w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden max-h-[85vh] sm:max-h-[90vh] flex flex-col animate-slide-up sm:animate-pop">
                 {/* 모달 헤더 */}
                 <div className={`${c.bg} border-b ${c.border} p-5 flex-shrink-0`}>
                     <div className="flex items-start justify-between">
@@ -156,7 +156,7 @@ function NearbyStoreDetailModal({
                     </div>
                 </div>
 
-                <div className="overflow-y-auto flex-1 custom-scrollbar">
+                <div className="overflow-y-auto flex-1 custom-scrollbar pb-24 sm:pb-5">
                     {/* 지도 */}
                     <div ref={mapRef} className="relative h-48 bg-gray-100 overflow-hidden w-full">
                         {!window.kakao && (
