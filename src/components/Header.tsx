@@ -165,9 +165,12 @@ export function Header() {
               {user && (
                 <button
                   onClick={() => handleMenuClick('/my-numbers')}
-                  className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm"
+                  className="flex items-center gap-2 bg-blue-50/80 px-3 py-1.5 rounded-full border border-blue-100 shadow-sm active:scale-95 transition-all"
                 >
-                  {user.nickname[0].toUpperCase()}
+                  <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-[10px] font-bold">
+                    {user.nickname[0].toUpperCase()}
+                  </div>
+                  <span className="text-xs font-black text-blue-700">{user.nickname}</span>
                 </button>
               )}
             </div>
