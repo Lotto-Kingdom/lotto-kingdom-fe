@@ -262,7 +262,7 @@ export function NearbyStore() {
     const { data, loading, fetchNearbyStores } = useNearbyStores();
 
     // 실제 검색을 수행하는 통합 함수
-    const handleSearch = useCallback((pos: {lat: number, lng: number}, newPage: number) => {
+    const handleSearch = useCallback((pos: {lat: number, lng: number}, newPage: number, override?: { onlyHot?: boolean, sort?: 'distance' | 'wins' }) => {
         let dynamicSize = 20;
         if (mapInstanceRef.current) {
             const level = mapInstanceRef.current.getLevel();
@@ -274,8 +274,8 @@ export function NearbyStore() {
             lat: pos.lat,
             lng: pos.lng,
             keyword: searchQuery, // 쿼리는 실시간 반영 (또는 debouncedQuery 선택 가능)
-            onlyHot: filterOnlyHot,
-            sort: sortBy,
+            onlyHot: override?.onlyHot ?? filterOnlyHot,
+            sort: override?.sort ?? sortBy,
             page: newPage,
             size: dynamicSize
         }, newPage > 0);
@@ -451,8 +451,8 @@ export function NearbyStore() {
                         />
                     </div>
                     <div className="flex items-center gap-2 overflow-x-auto pb-1 pointer-events-auto">
-                        <button onClick={() => { setFilterOnlyHot(false); if(searchPos) handleSearch(searchPos, 0); }} className={`flex-shrink-0 px-4 py-2 rounded-full text-[13px] font-bold shadow-sm ${!filterOnlyHot ? 'bg-gray-800 text-white' : 'bg-white border'}`}>전체 보기</button>
-                        <button onClick={() => { setFilterOnlyHot(true); if(searchPos) handleSearch(searchPos, 0); }} className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold shadow-sm border ${filterOnlyHot ? 'bg-red-500 text-white' : 'bg-white text-red-600'}`}><Trophy className="w-3.5 h-3.5" /> 1등 배출점만</button>
+                        <button onClick={() => { setFilterOnlyHot(false); setPage(0); if(searchPos) handleSearch(searchPos, 0, { onlyHot: false }); }} className={`flex-shrink-0 px-4 py-2 rounded-full text-[13px] font-bold shadow-sm ${!filterOnlyHot ? 'bg-gray-800 text-white' : 'bg-white border'}`}>전체 보기</button>
+                        <button onClick={() => { setFilterOnlyHot(true); setPage(0); if(searchPos) handleSearch(searchPos, 0, { onlyHot: true }); }} className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold shadow-sm border ${filterOnlyHot ? 'bg-red-500 text-white' : 'bg-white text-red-600'}`}><Trophy className="w-3.5 h-3.5" /> 1등 배출점만</button>
                     </div>
                 </div>
 
@@ -470,9 +470,9 @@ export function NearbyStore() {
                     <div className="px-5 pb-3 pt-1 lg:pt-4 flex items-center justify-between border-b border-gray-100 flex-shrink-0">
                         <h3 className="font-bold text-gray-800 text-[15px]">목록 <span className="text-blue-600">{filteredStores.length}</span>개</h3>
                         <div className="flex items-center gap-3">
-                            <button onClick={() => { setSortBy('distance'); if(searchPos) handleSearch(searchPos, 0); }} className={`text-[13px] font-bold ${sortBy === 'distance' ? 'text-blue-600' : 'text-gray-400'}`}>거리순</button>
+                            <button onClick={() => { setSortBy('distance'); setPage(0); if(searchPos) handleSearch(searchPos, 0, { sort: 'distance' }); }} className={`text-[13px] font-bold ${sortBy === 'distance' ? 'text-blue-600' : 'text-gray-400'}`}>거리순</button>
                             <span className="text-gray-200 text-xs">|</span>
-                            <button onClick={() => { setSortBy('wins'); if(searchPos) handleSearch(searchPos, 0); }} className={`text-[13px] font-bold ${sortBy === 'wins' ? 'text-red-500' : 'text-gray-400'}`}>당첨순</button>
+                            <button onClick={() => { setSortBy('wins'); setPage(0); if(searchPos) handleSearch(searchPos, 0, { sort: 'wins' }); }} className={`text-[13px] font-bold ${sortBy === 'wins' ? 'text-red-500' : 'text-gray-400'}`}>당첨순</button>
                         </div>
                     </div>
 
