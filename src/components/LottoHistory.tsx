@@ -5,9 +5,9 @@ import { HistoryItem } from './HistoryItem';
 
 interface LottoHistoryProps {
   history: LottoNumber[];
-  onDelete: (id: string) => void;
+  onDelete: (id: number | string) => void;
   onClearAll: () => void;
-  onUpdate: (id: string, updates: Partial<LottoNumber>) => void;
+  onUpdate: (id: number | string, updates: Partial<LottoNumber>) => void;
 }
 
 export function LottoHistory({ history, onDelete, onClearAll, onUpdate: _onUpdate }: LottoHistoryProps) {

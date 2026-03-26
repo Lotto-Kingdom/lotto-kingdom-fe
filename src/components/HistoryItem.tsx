@@ -5,8 +5,8 @@ import { formatDate, getLottoNumberColor } from '../utils/lottoGenerator';
 
 interface HistoryItemProps {
   entry: LottoNumber;
-  onDelete: (id: string) => void;
-  onUpdate?: (id: string, updates: Partial<LottoNumber>) => void;
+  onDelete: (id: number | string) => void;
+  onUpdate?: (id: number | string, updates: Partial<LottoNumber>) => void;
 }
 
 export function HistoryItem({ entry, onDelete, onUpdate }: HistoryItemProps) {
@@ -62,7 +62,7 @@ export function HistoryItem({ entry, onDelete, onUpdate }: HistoryItemProps) {
             </span>
           )}
           <span className="text-xs sm:text-sm text-gray-500 font-medium">
-            {formatDate(entry.timestamp)}
+            {formatDate(entry.createdAt)}
           </span>
         </div>
         <div className="flex gap-1 sm:gap-2">

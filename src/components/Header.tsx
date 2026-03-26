@@ -1,14 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { TrendingUp, MapPin, User, LogOut, LogIn, Dices, Trophy, Crown } from 'lucide-react';
+import { TrendingUp, MapPin, User, LogOut, LogIn, Dices, Trophy, Crown, Menu, X, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { AuthModal } from './AuthModal';
-import { BottomNav } from './BottomNav';
 import { ChevronDown } from 'lucide-react';
 
 export function Header() {
   const [authModal, setAuthModal] = useState<'login' | 'signup' | null>(null);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -231,23 +231,164 @@ export function Header() {
               </div>
             </div>
 
-            {/* 모바일: 로고 우측 로그인 버튼 */}
-            <div className="md:hidden">
+            {/* 모바일: 우측 메뉴 버튼 */}
+            <div className="md:hidden flex items-center gap-3">
               {user ? (
                 <button
                   onClick={() => setUserMenuOpen(o => !o)}
-                  className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                  className="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm"
                 >
                   {user.nickname[0].toUpperCase()}
                 </button>
               ) : (
                 <button
                   onClick={() => setAuthModal('login')}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm font-semibold text-blue-600 border border-blue-200 rounded-xl"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-600 bg-blue-50 rounded-xl border border-blue-100"
                 >
                   <LogIn className="w-4 h-4" />로그인
                 </button>
               )}
+              
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2 rounded-xl bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors"
+                aria-label="메뉴 열기"
+              >
+                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 모바일 전체 화면 메뉴 오버레이 */}
+        <div className={`fixed inset-0 z-[60] bg-white transition-all duration-300 md:hidden ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+          <div className="flex flex-col h-full overflow-hidden">
+            {/* 메뉴 헤더 */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+                  <Crown className="w-4 h-4 text-white" />
+                </div>
+                <span className="font-black text-gray-800">Menu</span>
+              </div>
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2 rounded-xl bg-gray-50 text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* 사용자 프로필 (모바일 메뉴 내) */}
+            <div className="p-5 bg-gradient-to-br from-gray-50 to-gray-100/50">
+              {user ? (
+                <div className="flex items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                      {user.nickname[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm font-black text-gray-900">{user.nickname}</p>
+                      <p className="text-xs text-gray-400">{user.email}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    title="로그아웃"
+                  >
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm font-bold text-gray-500 text-center">로그인하고 더 많은 기능을 이용해보세요!</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => { setAuthModal('login'); setMobileMenuOpen(false); }}
+                      className="w-full py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-700 shadow-sm"
+                    >
+                      로그인
+                    </button>
+                    <button
+                      onClick={() => { setAuthModal('signup'); setMobileMenuOpen(false); }}
+                      className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl text-sm font-bold text-white shadow-md"
+                    >
+                      회원가입
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 메인 메뉴 리스트 */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+              <div>
+                <h3 className="px-2 text-[11px] font-black text-gray-400 uppercase tracking-wider mb-2">Service</h3>
+                <div className="space-y-1">
+                  {menuGroups.map((group, idx) => (
+                    <div key={idx} className="space-y-1">
+                      {group.submenu ? (
+                        <>
+                          <div className="flex items-center gap-3 px-3 py-3 text-gray-400 font-bold text-xs uppercase bg-gray-50/50 rounded-xl mb-1">
+                             <group.icon className="w-4 h-4" />
+                             {group.label}
+                          </div>
+                          <div className="grid grid-cols-1 gap-1 pl-4">
+                            {group.submenu.map((sub, i) => (
+                              <button
+                                key={i}
+                                onClick={() => { handleMenuClick(sub.path); setMobileMenuOpen(false); }}
+                                className={`flex items-center justify-between px-3 py-3.5 rounded-xl transition-all ${location.pathname === sub.path 
+                                  ? 'bg-blue-50 text-blue-600 font-black' 
+                                  : 'text-gray-600 hover:bg-gray-50 font-bold'
+                                }`}
+                              >
+                                {sub.label}
+                                <ChevronRight className="w-4 h-4 opacity-30" />
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => { handleMenuClick(group.path!); setMobileMenuOpen(false); }}
+                          className={`flex items-center gap-3 w-full px-4 py-4 rounded-2xl transition-all ${location.pathname === group.path 
+                            ? 'bg-blue-50 text-blue-600 font-black shadow-inner shadow-blue-100/50' 
+                            : 'text-gray-700 hover:bg-gray-50 font-bold'
+                          }`}
+                        >
+                          <group.icon className={`w-5 h-5 ${location.pathname === group.path ? 'text-blue-500' : 'text-gray-400'}`} />
+                          <span className="text-[15px]">{group.label}</span>
+                          <ChevronRight className="ml-auto w-4 h-4 opacity-30" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="px-2 text-[11px] font-black text-gray-400 uppercase tracking-wider mb-2">My Page</h3>
+                <div className="space-y-1">
+                  <button
+                    onClick={() => { handleMenuClick('/my-stats'); setMobileMenuOpen(false); }}
+                    className={`flex items-center gap-3 w-full px-4 py-4 rounded-2xl transition-all ${location.pathname === '/my-stats' 
+                      ? 'bg-orange-50 text-orange-600 font-black shadow-inner shadow-orange-100/50' 
+                      : 'text-gray-700 hover:bg-gray-50 font-bold'
+                    }`}
+                  >
+                    <User className={`w-5 h-5 ${location.pathname === '/my-stats' ? 'text-orange-500' : 'text-gray-400'}`} />
+                    <span className="text-[15px]">내 번호 / 통계</span>
+                    <ChevronRight className="ml-auto w-4 h-4 opacity-30" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* 메뉴 푸터 */}
+            <div className="p-6 bg-gray-50 border-t border-gray-100">
+               <p className="text-center text-xs text-gray-400 font-medium">로또나라에서 당신의 행운을 찾으세요 🍀</p>
             </div>
           </div>
         </div>
@@ -276,14 +417,7 @@ export function Header() {
         )}
       </header>
 
-      {/* 모바일 하단 네비게이션 */}
-      <BottomNav onLoginClick={() => {
-        if (user) {
-          setUserMenuOpen(o => !o);
-        } else {
-          setAuthModal('login');
-        }
-      }} />
+      {/* 모바일 하단 네비게이션 제거됨 */}
 
       {/* 인증 모달 */}
       {authModal && (
