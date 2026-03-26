@@ -281,21 +281,31 @@ export function NearbyStore() {
         }, newPage > 0);
     }, [searchQuery, filterOnlyHot, sortBy, fetchNearbyStores]);
 
-    // 초기 위치 로드 - 1회만 호출
+    // 초기 위치 로드 및 위치 이동 감지
     useEffect(() => {
+        let watchId: number;
+        let isFirst = true;
+
         if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
+            watchId = navigator.geolocation.watchPosition(
                 (position) => {
                     const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
-                    setUserPos(pos);
-                    setRealUserPos(pos);
-                    setSearchPos(pos);
-                    handleSearch(pos, 0);
+                    setRealUserPos(pos); // 내 위치 태그 즉시 갱신
+                    
+                    if (isFirst) {
+                        setUserPos(pos);
+                        setSearchPos(pos);
+                        handleSearch(pos, 0);
+                        isFirst = false;
+                    }
                 },
                 (error) => {
                     console.warn("Geolocation error:", error);
-                    setSearchPos(DEFAULT_POS);
-                    handleSearch(DEFAULT_POS, 0);
+                    if (isFirst) {
+                        setSearchPos(DEFAULT_POS);
+                        handleSearch(DEFAULT_POS, 0);
+                        isFirst = false;
+                    }
                 },
                 { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
             );
@@ -303,6 +313,12 @@ export function NearbyStore() {
             setSearchPos(DEFAULT_POS);
             handleSearch(DEFAULT_POS, 0);
         }
+
+        return () => {
+            if (watchId !== undefined && navigator.geolocation) {
+                navigator.geolocation.clearWatch(watchId);
+            }
+        };
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     // 카카오맵 준비 대기
@@ -506,10 +522,25 @@ export function NearbyStore() {
                     </button>
                     <button 
                         onClick={() => {
-                            if (mapInstanceRef.current && userPos) {
-                                mapInstanceRef.current.panTo(new window.kakao.maps.LatLng(userPos.lat, userPos.lng));
-                                // 사용자 편의를 위해 "내 위치"로 갈 때 자동으로 검색할지 선택 가능. 여기선 지도만 이동함.
-                                // 만약 내 위치 기준 검색도 원한다면 handleSearch(userPos, 0); 추가
+                            if (navigator.geolocation) {
+                                navigator.geolocation.getCurrentPosition(
+                                    (position) => {
+                                        const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
+                                        setRealUserPos(pos);
+                                        if (mapInstanceRef.current) {
+                                            mapInstanceRef.current.panTo(new window.kakao.maps.LatLng(pos.lat, pos.lng));
+                                        }
+                                    },
+                                    () => {
+                                        // 실패 시 기존 추적된 위치라도 사용
+                                        if (mapInstanceRef.current && realUserPos) {
+                                            mapInstanceRef.current.panTo(new window.kakao.maps.LatLng(realUserPos.lat, realUserPos.lng));
+                                        }
+                                    },
+                                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                                );
+                            } else if (mapInstanceRef.current && realUserPos) {
+                                mapInstanceRef.current.panTo(new window.kakao.maps.LatLng(realUserPos.lat, realUserPos.lng));
                             }
                         }}
                         className="pointer-events-auto flex items-center justify-center w-11 h-11 bg-white text-blue-600 rounded-full shadow-lg border active:scale-95"
