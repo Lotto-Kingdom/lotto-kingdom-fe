@@ -516,7 +516,7 @@ export function NearbyStore() {
                     </div>
 
                     {/* 스크롤 가능한 리스트 */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-gray-50/50 lg:bg-transparent">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar bg-gray-50/50 lg:bg-transparent pb-32 sm:pb-4">
                         {filteredStores.map(store => (
                             <div 
                                 key={store.id} 
