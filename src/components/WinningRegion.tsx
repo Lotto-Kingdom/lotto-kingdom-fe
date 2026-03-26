@@ -161,17 +161,17 @@ function RoundRow({
         <span className="font-bold text-gray-800 text-[13px] sm:text-sm leading-snug break-keep line-clamp-2 sm:truncate group-hover:text-blue-600">
           {round.storeName}
         </span>
-        <div className="flex-shrink-0 mt-0.5 sm:mt-0">
+        <div className="flex-shrink-0 mt-0.5 sm:mt-0 flex items-center gap-1.5">
           <RegionBadge region={round.region} small />
+          <span className={`whitespace-nowrap text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+            round.method === 'auto'
+              ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+              : 'bg-purple-50 text-purple-600 border border-purple-200'
+          }`}>
+            {round.method === 'auto' ? '자동' : '수동'}
+          </span>
         </div>
       </button>
-      <span className={`flex-shrink-0 whitespace-nowrap text-[10px] font-bold px-2 py-0.5 rounded-full ${
-        round.method === 'auto'
-          ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-          : 'bg-purple-50 text-purple-600 border border-purple-200'
-      }`}>
-        {round.method === 'auto' ? '자동' : '수동'}
-      </span>
     </div>
   );
 }
