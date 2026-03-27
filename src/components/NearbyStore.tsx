@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, MapPin, Trophy, X, Store as StoreIcon, Check, Copy, Star, Award, TrendingUp, Hash, Loader2, Navigation, RefreshCw } from 'lucide-react';
 import { Store } from '../utils/lottoData';
 import { useNearbyStores } from '../hooks/useNearbyStore';
@@ -106,7 +107,7 @@ function NearbyStoreDetailModal({
         }
     }, [store.lat, store.lng]);
 
-    return (
+    return createPortal(
         <div
             className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
             onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
@@ -237,7 +238,8 @@ function NearbyStoreDetailModal({
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 
