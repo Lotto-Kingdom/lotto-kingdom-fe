@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Mail, Copy, Check, ExternalLink } from 'lucide-react';
+import { SEO } from './SEO';
 
 export function ContactUs() {
     const [copied, setCopied] = useState(false);
@@ -16,7 +17,9 @@ export function ContactUs() {
     };
 
     return (
-        <div className="min-h-[50vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <>
+            <SEO title="문의하기 - 로또나라" description="로또나라 서비스 이용 중 문의사항이나 제안이 있으시다면 언제든 연락해주세요." />
+            <div className="min-h-[50vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-md w-full space-y-8 bg-white/80 backdrop-blur-md p-8 sm:p-10 rounded-3xl shadow-xl border border-white">
                 <div className="text-center">
                     <div className="mx-auto h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
@@ -68,5 +71,6 @@ export function ContactUs() {
                 </div>
             </div>
         </div>
+        </>
     );
 }

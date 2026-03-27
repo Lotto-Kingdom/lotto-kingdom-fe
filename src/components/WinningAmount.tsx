@@ -3,6 +3,7 @@ import {
   DollarSign, TrendingUp, Trophy, Users, ChevronDown, ChevronUp,
   Banknote, Star, Award, Sparkles, BarChart3,
 } from 'lucide-react';
+import { SEO } from './SEO';
 
 // ─────────────────────────────────────────────
 // useLottoWinning 의 MOCK_DRAWS 를 직접 임포트
@@ -406,7 +407,9 @@ export function WinningAmount() {
   );
 
   return (
-    <div className="w-full space-y-4 sm:space-y-6">
+    <>
+      <SEO title="역대 당첨금 및 기준 확인 - 로또나라" description="로또 1등 당첨금 내역과 등수별 당첨 기준을 확인하세요." />
+      <div className="w-full space-y-4 sm:space-y-6">
       {/* 페이지 헤더 */}
       <div className="flex items-center gap-2">
         <DollarSign className="w-6 h-6 text-amber-500" />
@@ -545,5 +548,6 @@ export function WinningAmount() {
         </p>
       </div>
     </div>
+    </>
   );
 }

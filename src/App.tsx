@@ -1,5 +1,7 @@
 import { Routes, Route, Link } from 'react-router-dom';
 import { Header } from './components/Header';
+import { SEO } from './components/SEO';
+import { HallOfFameBanner } from './components/HallOfFameBanner';
 import { LottoGenerator } from './components/LottoGenerator';
 import { MiniHistory } from './components/MiniHistory';
 import { StoreFinder } from './components/StoreFinder';
@@ -38,8 +40,11 @@ function HomePage() {
   const recentHistory = history.slice(0, Math.min(sessionCount, 5));
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+    <>
+      <SEO title="로또나라 - 행운의 당첨 번호 생성기 및 통계" />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
       <div className="lg:col-span-8 space-y-4 sm:space-y-6 lg:space-y-8">
+        <HallOfFameBanner />
         <LottoGenerator onGenerate={handleGenerate} />
         {recentHistory.length > 0 && <MiniHistory history={recentHistory} />}
         <StoreFinder />
@@ -51,6 +56,7 @@ function HomePage() {
         </div>
       </aside>
     </div>
+    </>
   );
 }
 

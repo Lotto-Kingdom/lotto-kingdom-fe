@@ -1,8 +1,11 @@
 import { ShieldCheck, Lock, Eye, CheckCircle2, AlertCircle } from 'lucide-react';
+import { SEO } from './SEO';
 
 export function PrivacyPolicy() {
     return (
-        <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+        <>
+            <SEO title="개인정보처리방침 - 로또나라" description="로또나라의 개인정보처리방침을 확인하세요." />
+            <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
             <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-xl border border-white p-6 sm:p-10">
                 <div className="text-center mb-10">
                     <div className="mx-auto h-16 w-16 bg-green-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
@@ -187,5 +190,6 @@ export function PrivacyPolicy() {
                 </div>
             </div>
         </div>
+        </>
     );
 }

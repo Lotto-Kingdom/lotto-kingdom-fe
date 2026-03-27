@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { SEO } from './SEO';
 import { Search, MapPin, Trophy, X, Store as StoreIcon, Check, Copy, Star, Award, TrendingUp, Hash, Loader2, Navigation, RefreshCw } from 'lucide-react';
 import { Store } from '../utils/lottoData';
 import { useNearbyStores } from '../hooks/useNearbyStore';
@@ -433,7 +434,9 @@ export function NearbyStore() {
     }, [filteredStores, kakaoReady]);
 
     return (
-        <div className="fixed inset-0 top-[64px] sm:top-[80px] z-40 flex bg-gray-50 overflow-hidden">
+        <>
+            <SEO title="내 주변 로또 명당 찾기 - 로또나라" description="내 주변 1등 로또 명당을 지도에서 한눈에 확인하세요." />
+            <div className="fixed inset-0 top-[64px] sm:top-[80px] z-40 flex bg-gray-50 overflow-hidden">
             <div className="absolute inset-0 flex flex-col pointer-events-none z-20 lg:static lg:w-[380px] xl:w-[420px] lg:pointer-events-auto lg:bg-white lg:shadow-[4px_0_24px_rgba(0,0,0,0.05)] lg:z-30 transition-all">
                 <div className="p-4 pointer-events-auto lg:p-6 lg:border-b lg:border-gray-100 lg:bg-white bg-transparent">
                     <div className="relative mb-3 shadow-lg lg:shadow-none rounded-2xl">
@@ -554,5 +557,6 @@ export function NearbyStore() {
 
             {selectedStore && <NearbyStoreDetailModal store={selectedStore} onClose={() => setSelectedStore(null)} />}
         </div>
+        </>
     );
 }

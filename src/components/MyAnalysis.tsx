@@ -2,6 +2,7 @@ import { useMyNumbers } from '../hooks/useMyNumbers';
 import { useAuth } from '../context/AuthContext';
 import { Sparkles, Trophy, History, Loader2, ArrowDownCircle } from 'lucide-react';
 import { LottoHistory } from './LottoHistory';
+import { SEO } from './SEO';
 
 // ── 섹션 카드 래퍼 ───────────────────────────────────────
 function Section({ title, icon: Icon, children, accent = 'blue' }: {
@@ -84,7 +85,9 @@ export function MyAnalysis() {
   const rankBg = ['bg-yellow-50 border-yellow-200', 'bg-gray-50 border-gray-200', 'bg-amber-50 border-amber-200', 'bg-blue-50 border-blue-200', 'bg-gray-50 border-gray-200'];
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto animate-fade-in">
+    <>
+      <SEO title="내 로또 번호 분석 및 당첨 확인 - 로또나라" description="저장된 로또 번호의 당첨 여부를 확인하고 나만의 패턴을 분석해보세요." />
+      <div className="space-y-6 max-w-4xl mx-auto animate-fade-in">
       {/* ── 히어로 요약 ─────────────────────────────── */}
       <div className="bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-500 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
         <div className="absolute top-0 right-0 p-8 opacity-10">
@@ -191,5 +194,6 @@ export function MyAnalysis() {
         )}
       </Section>
     </div>
+    </>
   );
 }

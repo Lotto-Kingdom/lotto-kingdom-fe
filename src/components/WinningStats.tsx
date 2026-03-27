@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { BarChart3, Flame, Snowflake, TrendingUp, Hash, Shuffle, Star, Loader2 } from 'lucide-react';
 import { getLottoNumberColor } from '../utils/lottoGenerator';
 import { useLottoFullStatistics, NumberFrequency, RangeDist, LottoStatisticsData } from '../hooks/useLottoFullStatistics';
+import { SEO } from './SEO';
 
 // ─────────────────────────────────────────────
 // 번호 공 컴포넌트
@@ -397,7 +398,9 @@ export function WinningStats() {
   }
 
   return (
-    <div className="w-full space-y-4 sm:space-y-6">
+    <>
+      <SEO title="로또 통계 및 분석 - 로또나라" description="로또 번호별 출현 빈도, 홀짝 통계, 합계 분포 등 전문적인 통계 데이터를 확인하세요." />
+      <div className="w-full space-y-4 sm:space-y-6">
 
       {/* 페이지 헤더 */}
       <div className="flex items-center justify-between">
@@ -482,5 +485,6 @@ export function WinningStats() {
         </p>
       </div>
     </div>
+    </>
   );
 }

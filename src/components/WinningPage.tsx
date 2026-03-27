@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Trophy, Store } from 'lucide-react';
+import { SEO } from './SEO';
 import { WinningHistory } from './WinningHistory';
 import { WinningRegion } from './WinningRegion';
 
@@ -13,7 +14,12 @@ export function WinningPage() {
   const location = useLocation();
 
   return (
-    <div className="space-y-4">
+    <>
+      <SEO 
+        title={location.pathname === '/winning' ? "역대 당첨번호 확인 - 로또나라" : "역대 1등 당첨 판매점 - 로또나라"} 
+        description="로또 역대 당첨번호와 1등 당첨 판매점 정보를 한눈에 확인하세요."
+      />
+      <div className="space-y-4">
       {/* 탭 바 - 모바일만 */}
       <div className="md:hidden flex bg-white rounded-2xl shadow-sm border border-gray-100 p-1 gap-1">
         {TABS.map(({ label, path, icon: Icon }) => {
@@ -38,5 +44,6 @@ export function WinningPage() {
       {/* 탭 콘텐츠 */}
       {location.pathname === '/winning' ? <WinningHistory /> : <WinningRegion />}
     </div>
+    </>
   );
 }
