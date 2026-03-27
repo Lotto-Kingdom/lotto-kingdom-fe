@@ -85,24 +85,28 @@
 
 ---
 
-## 2. 내 번호 목록 조회 (페이징)
+## 2. 내 번호 목록 조회 (회차별 페이징)
 
 ### `GET /api/lotto/my-numbers`
 
-저장된 번호 목록을 최신순으로 페이징하여 반환합니다. 각 세트에는 실제 당첨 여부(`winningInfo`)가 포함됩니다.
+특정 회차의 내 번호 목록을 페이징하여 반환합니다. 각 세트에는 실제 당첨 여부(`winningInfo`)가 포함됩니다.
+`round`를 지정하지 않으면 현재(최신) 회차를 기준으로 조회합니다.
 
 #### Request
 
 | 구분 | Key | 타입 | 필수 | 기본값 | 설명 |
 |------|-----|------|------|--------|------|
 | Cookie | `JSESSIONID` | String | Y | - | 세션 인증 |
+| Query | `round` | int | N | 현재 회차 | 조회할 회차 번호 (1 이상) |
 | Query | `page` | int | N | `0` | 페이지 번호 (0부터 시작) |
-| Query | `size` | int | N | `20` | 페이지 크기 |
+| Query | `size` | int | N | `20` | 페이지 크기 (1~100) |
 
 #### Request 예시
 
 ```
-GET /api/lotto/my-numbers?page=0&size=20
+GET /api/lotto/my-numbers              → 현재 회차 조회
+GET /api/lotto/my-numbers?round=1102   → 1102회차 조회
+GET /api/lotto/my-numbers?round=1102&page=0&size=20
 ```
 
 #### Response (200 OK)
@@ -113,6 +117,7 @@ GET /api/lotto/my-numbers?page=0&size=20
   "code": "200",
   "message": "요청이 성공적으로 처리되었습니다.",
   "data": {
+    "round": 1102,
     "content": [
       {
         "id": 301,
@@ -123,11 +128,11 @@ GET /api/lotto/my-numbers?page=0&size=20
         "winningInfo": null
       },
       {
-        "id": 298,
+        "id": 302,
         "numbers": [2, 15, 22, 38, 41, 44],
-        "round": 1099,
+        "round": 1102,
         "isBought": true,
-        "createdAt": "2026-03-15T09:20:10",
+        "createdAt": "2026-03-25T11:05:10",
         "winningInfo": {
           "rank": 4,
           "matchCount": 4,
@@ -138,9 +143,9 @@ GET /api/lotto/my-numbers?page=0&size=20
     ],
     "pageNumber": 0,
     "pageSize": 20,
-    "totalPages": 5,
-    "totalElements": 86,
-    "isLast": false
+    "totalPages": 1,
+    "totalElements": 2,
+    "isLast": true
   }
 }
 ```
@@ -149,9 +154,10 @@ GET /api/lotto/my-numbers?page=0&size=20
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
+| `round` | `int` | 조회된 회차 번호 |
 | `content[].id` | `Long` | 번호 세트 ID |
 | `content[].numbers` | `Integer[6]` | 로또 번호 6개 (오름차순) |
-| `content[].round` | `int` | 생성 당시 회차 번호 |
+| `content[].round` | `int` | 회차 번호 (`round`와 동일) |
 | `content[].isBought` | `boolean` | 오프라인 구매 완료 여부 |
 | `content[].createdAt` | `String` (ISO 8601) | 생성 일시 |
 | `content[].winningInfo` | `Object \| null` | 당첨 정보. 미당첨 또는 미추첨 시 `null` |
@@ -246,17 +252,26 @@ GET /api/lotto/my-numbers?page=0&size=20
 
 ---
 
-## 5. 내 번호 전체 삭제
+## 5. 내 번호 회차별 전체 삭제
 
 ### `DELETE /api/lotto/my-numbers`
 
-로그인한 사용자의 내 번호 기록 전체를 삭제합니다.
+특정 회차의 내 번호 기록 전체를 삭제합니다.
+`round`를 지정하지 않으면 현재(최신) 회차의 내역을 삭제합니다.
 
 #### Request
 
-| 구분 | Key | 타입 | 필수 | 설명 |
-|------|-----|------|------|------|
-| Cookie | `JSESSIONID` | String | Y | 세션 인증 |
+| 구분 | Key | 타입 | 필수 | 기본값 | 설명 |
+|------|-----|------|------|--------|------|
+| Cookie | `JSESSIONID` | String | Y | - | 세션 인증 |
+| Query | `round` | int | N | 현재 회차 | 삭제할 회차 번호 (1 이상) |
+
+#### Request 예시
+
+```
+DELETE /api/lotto/my-numbers             → 현재 회차 전체 삭제
+DELETE /api/lotto/my-numbers?round=1102  → 1102회차 전체 삭제
+```
 
 #### Response (200 OK)
 
@@ -266,10 +281,9 @@ GET /api/lotto/my-numbers?page=0&size=20
   "code": "200",
   "message": "요청이 성공적으로 처리되었습니다.",
   "data": {
-    "message": "모든 내역이 성공적으로 삭제되었습니다."
+    "message": "1102회차 내역이 모두 삭제되었습니다."
   }
 }
-```
 
 ---
 

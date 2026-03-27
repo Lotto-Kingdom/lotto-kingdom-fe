@@ -1,6 +1,6 @@
 import { useMyNumbers } from '../hooks/useMyNumbers';
 import { useAuth } from '../context/AuthContext';
-import { Sparkles, Trophy, History, Loader2, ArrowDownCircle } from 'lucide-react';
+import { Trophy, History as HistoryIcon, Loader2, ArrowDownCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LottoHistory } from './LottoHistory';
 import { SEO } from './SEO';
 
@@ -32,11 +32,13 @@ export function MyAnalysis() {
     loading,
     summaryLoading,
     totalElements,
+    currentRound,
     hasMore,
     togglePurchase,
     deleteEntry,
     clearAll,
-    loadMore
+    loadMore,
+    changeRound
   } = useMyNumbers();
 
   const isInitialLoading = summaryLoading && !summary;
@@ -70,7 +72,7 @@ export function MyAnalysis() {
     return (
       <div className="max-w-2xl mx-auto text-center py-20 px-4 animate-fade-in text-gray-800">
         <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
-          <History className="w-10 h-10 text-blue-400" />
+                <HistoryIcon className="w-10 h-10 text-blue-400" />
         </div>
         <h2 className="text-2xl font-black mb-3">아직 저장된 번호가 없어요</h2>
         <p className="text-gray-500 text-sm leading-relaxed">
@@ -88,42 +90,38 @@ export function MyAnalysis() {
     <>
       <SEO title="내 로또 번호 분석 및 당첨 확인 - 로또나라" description="저장된 로또 번호의 당첨 여부를 확인하고 나만의 패턴을 분석해보세요." />
       <div className="space-y-6 max-w-4xl mx-auto animate-fade-in">
-      {/* ── 히어로 요약 ─────────────────────────────── */}
-      <div className="bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-500 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-8 opacity-10">
-            <Sparkles className="w-24 h-24" />
-        </div>
-        <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-4">
-            <Sparkles className="w-5 h-5 text-yellow-300" />
-            <h1 className="text-lg font-black">내 번호 분석 요약</h1>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {[
-              { label: '총 저장 세트', value: `${summary?.totalSets || 0}세트` },
-              { label: '총 번호 개수', value: `${summary?.totalNumbers || 0}개` },
-              { label: '많이 골른 번호', value: summary?.mostFrequentNumber ? `${summary.mostFrequentNumber.number}번 (${summary.mostFrequentNumber.count}회)` : '-' },
-              { label: '누적 당첨금', value: summary?.winningSummary ? `${(summary.winningSummary.totalPrize / 10000).toFixed(1)}만원` : '0원' },
-            ].map(({ label, value }) => (
-              <div key={label} className="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/10">
-                <p className="text-white/70 text-[10px] sm:text-xs mb-1 font-bold">{label}</p>
-                <p className="text-white font-black text-base sm:text-lg leading-none">{value}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
 
-      {/* ── 전체 생성/당첨 내역 ── */}
+      {/* ── 회차별 내역 ── */}
       <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-4 sm:p-6 lg:p-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <h3 className="text-lg sm:text-2xl font-black text-gray-800 flex items-center gap-2">
-                <History className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" />
-                나의 로또 히스토리
+                <HistoryIcon className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" />
+                회차별 내역
             </h3>
-            <span className="text-xs sm:text-sm font-black text-blue-600 bg-blue-50 px-4 py-1.5 rounded-full">
-                총 {totalElements}건
-            </span>
+            
+            {/* 회차 변경 UI */}
+            {currentRound && (
+              <div className="flex items-center bg-gray-50 rounded-2xl p-1.5 border border-gray-100 self-start sm:self-auto">
+                <button 
+                  onClick={() => changeRound(currentRound - 1)}
+                  disabled={loading}
+                  className="p-2 hover:bg-white rounded-xl transition-all shadow-sm flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="w-5 h-5 text-gray-600" />
+                </button>
+                <div className="flex flex-col items-center px-4 min-w-[100px]">
+                  <span className="text-lg font-black text-blue-600">{currentRound}회차</span>
+                  <span className="text-[10px] text-gray-500 font-bold">총 {totalElements}건</span>
+                </div>
+                <button 
+                  onClick={() => changeRound(currentRound + 1)}
+                  disabled={loading}
+                  className="p-2 hover:bg-white rounded-xl transition-all shadow-sm flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
+            )}
         </div>
         
         <div className="-mx-4 sm:-mx-6 lg:-mx-8">
